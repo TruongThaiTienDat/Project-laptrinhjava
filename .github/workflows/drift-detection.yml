@@ -1,1 +1,17 @@
-# Drift detection workflow
+name: AI Drift Detection Workflow
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-python-version: '3.10'
+      - name: Check Drift Placeholder
+        run: echo "Running AI Drift Detection on Pull Request..."

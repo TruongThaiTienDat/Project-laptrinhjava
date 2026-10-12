@@ -1,14 +1,30 @@
-# Compiled class files
+# Operating System
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Java / Maven (Backend)
+backend/target/
 *.class
-# Log files
-*.log
-# Package Files #
 *.jar
-*.war
-*.ear
-# Node modules
-node_modules/
-# Python
-__pycache__/
+
+# Node / ReactJS (Frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Python (AI Engine)
+ai-engine/__pycache__/
+ai-engine/*.pyc
+ai-engine/.venv/
+ai-engine/venv/
+ai-engine/.env
+
+# Misc
 .env
-backend/node_modules/
+*.log
