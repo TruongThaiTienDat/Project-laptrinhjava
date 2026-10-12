@@ -1,0 +1,21 @@
+### BƯỚC A: Gửi tài liệu (ID = 1) đi duyệt (Chuyển từ DRAFT sang IN_REVIEW)
+PUT http://localhost:8080/api/workflow/1/submit
+Content-Type: application/json
+
+###
+
+### BƯỚC B: Quyền STAFF vào kiểm tra và bấm Duyệt (Chuyển sang APPROVED)
+PUT http://localhost:8080/api/workflow/1/staff-approve
+Content-Type: application/json
+
+###
+
+### BƯỚC C: Quyền MANAGER phê duyệt cuối để xuất bản (Chuyển sang PUBLISHED)
+PUT http://localhost:8080/api/workflow/1/manager-publish
+Content-Type: application/json
+
+###
+
+### BƯỚC PHỤ: Thử bấm từ chối tài liệu (Trả về REJECTED)
+PUT http://localhost:8080/api/workflow/1/reject
+Content-Type: application/json
