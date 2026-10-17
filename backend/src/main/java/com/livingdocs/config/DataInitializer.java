@@ -2,6 +2,7 @@ package com.livingdocs.config;
 
 import com.livingdocs.model.ERole;
 import com.livingdocs.model.User;
+import com.livingdocs.model.Role;
 import com.livingdocs.repository.RoleRepository;
 import com.livingdocs.repository.UserRepository;
 import org.slf4j.Logger;

@@ -2,6 +2,7 @@ package com.livingdocs.controller;
 
 import com.livingdocs.model.ERole;
 import com.livingdocs.model.User;
+import com.livingdocs.model.Role;
 import com.livingdocs.payload.request.UpdateRolesRequest;
 import com.livingdocs.payload.response.MessageResponse;
 import com.livingdocs.repository.RoleRepository;
