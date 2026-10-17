@@ -25,6 +25,14 @@ import {
   Search
 } from 'lucide-react';
 
+/**
+ * Giao dien xet duyet quy trinh (Workflow Review UI)
+ * Muc tieu do an: Xay dung luong kiem duyet tai lieu 2 cap co su tham gia cua con nguoi (Human-in-the-loop).
+ * - Buoc 1: Developer hoac AI Engine nop tai lieu vao hang doi (trang thai DRAFT -> IN_REVIEW).
+ * - Buoc 2: Staff kiem tra tai lieu voi bang chung ma nguon (Grounding Evidence), neu dat se duyet len buoc 3 (IN_REVIEW -> APPROVED).
+ * - Buoc 3: Manager phe duyet xuat ban chinh thuc, he thong tu dong tang so phien ban (APPROVED -> PUBLISHED).
+ * - Buoc phu: Neu phat hien sai sot, Staff hoac Manager co the tu choi va tra ve kem ly do (-> REJECTED).
+ */
 export default function WorkflowReviewPage() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<number>(1);
@@ -38,7 +46,7 @@ export default function WorkflowReviewPage() {
   const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch initial documents and logs
+  // Ham tai du lieu tu backend Spring Boot (hoac Mock Fallback neu backend chua chay)
   const loadData = async () => {
     setLoading(true);
     try {
@@ -49,7 +57,7 @@ export default function WorkflowReviewPage() {
         setChangeLogs(logsRes.history);
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Loi khi tai du lieu:', err);
     } finally {
       setLoading(false);
     }
@@ -59,12 +67,13 @@ export default function WorkflowReviewPage() {
     loadData();
   }, [selectedDocId]);
 
+  // Hien thi thong bao tam thoi cho nguoi dung
   const showNotify = (msg: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message: msg, type });
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // Staff Approve
+  // Xu ly khi Staff bam duyet buoc 1 (API: /api/workflow/:id/staff-approve)
   const handleStaffApprove = async (id: number) => {
     try {
       const res = await workflowApi.staffApprove(id);
@@ -75,7 +84,7 @@ export default function WorkflowReviewPage() {
     }
   };
 
-  // Manager Publish
+  // Xu ly khi Manager phe duyet xuat ban chinh thuc (API: /api/workflow/:id/manager-publish)
   const handleManagerPublish = async (id: number) => {
     try {
       const res = await workflowApi.managerPublish(id);
@@ -86,7 +95,7 @@ export default function WorkflowReviewPage() {
     }
   };
 
-  // Submit Draft to Review
+  // Xu ly khi Developer hoac AI nop tai lieu vao hang doi (API: /api/workflow/:id/submit)
   const handleSubmitDraft = async (id: number) => {
     try {
       const res = await workflowApi.submitForReview(id, selectedRole);
@@ -97,10 +106,10 @@ export default function WorkflowReviewPage() {
     }
   };
 
-  // Reject Document
+  // Xu ly khi tu choi tai lieu kem ly do (API: /api/workflow/:id/reject)
   const handleReject = async () => {
     if (!rejectReason.trim()) {
-      showNotify('Vui lòng nhập lý do từ chối để tác giả biết và sửa lại', 'error');
+      showNotify('Vui long nhap ly do tu choi de tac gia biet va sua lai', 'error');
       return;
     }
     try {
@@ -116,7 +125,7 @@ export default function WorkflowReviewPage() {
 
   const selectedDoc = documents.find(d => d.id === selectedDocId) || documents[0];
 
-  // Filtering documents according to queue tabs
+  // Loc danh sach tai lieu theo hang doi duyet va tim kiem
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'STAFF_QUEUE' && doc.status !== 'IN_REVIEW') return false;
     if (activeTab === 'MANAGER_QUEUE' && doc.status !== 'APPROVED') return false;
@@ -127,35 +136,35 @@ export default function WorkflowReviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* Title & Role switch header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      {/* Tieu de trang va cong cu chon vai tro demo */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-slate-900">Luồng Phê Duyệt & Xét Duyệt Tài Liệu (Workflow Review)</h1>
-            <span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-800 rounded font-semibold border border-indigo-200">
-              Human-In-The-Loop
+            <h1 className="text-xl font-bold text-slate-900">Luong Kiem Duyet Tai Lieu (Workflow Review UI)</h1>
+            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-800 rounded font-semibold border border-slate-300">
+              Quy trinh 2 cap kiem duyet
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Quy trình đảm bảo chất lượng: AI sinh/cập nhật ➔ Staff rà soát kỹ thuật ➔ Manager phê duyệt xuất bản
+            Quy trinh tuan thu de tai: Developer / AI sinh tai lieu ➔ Staff kiem tra ky thuat ➔ Manager phe duyet xuat ban.
           </p>
         </div>
 
-        {/* Action simulator for role */}
-        <div className="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs">
-          <span className="text-slate-600 font-semibold px-2 flex items-center space-x-1">
-            <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Thao tác với tư cách:</span>
+        {/* Chon vai tro thao tac de giao vien de dang kiem thu */}
+        <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded border border-slate-200 text-xs">
+          <span className="text-slate-600 font-semibold px-1 flex items-center space-x-1">
+            <UserCheck className="w-3.5 h-3.5 text-sky-600" />
+            <span>Thao tac voi vai tro:</span>
           </span>
           <div className="flex space-x-1">
             {(['Staff', 'Manager', 'Developer'] as const).map(r => (
               <button
                 key={r}
                 onClick={() => setSelectedRole(r)}
-                className={`px-3 py-1 rounded-lg font-semibold transition ${
+                className={`px-3 py-1 rounded font-semibold transition ${
                   selectedRole === r
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 {r === 'Staff' ? 'Staff Reviewer' : r === 'Manager' ? 'Manager Approver' : 'Developer'}
@@ -165,105 +174,105 @@ export default function WorkflowReviewPage() {
         </div>
       </div>
 
-      {/* Notification toast */}
+      {/* Thong bao trang thai */}
       {notification && (
-        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center space-x-2 shadow-md transition-all ${
+        <div className={`p-3.5 rounded text-xs font-semibold flex items-center space-x-2 shadow-sm transition-all ${
           notification.type === 'success'
             ? 'bg-emerald-50 text-emerald-900 border border-emerald-300'
-            : 'bg-rose-50 text-rose-900 border border-rose-300'
+            : 'bg-red-50 text-red-900 border border-red-300'
         }`}>
           {notification.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           )}
           <span>{notification.message}</span>
         </div>
       )}
 
-      {/* Queue Selection Tabs & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+      {/* Thanh chuyen tab giua cac hang doi */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded border border-slate-200 shadow-sm text-xs">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setActiveTab('STAFF_QUEUE')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 transition ${
+            className={`px-3 py-2 rounded font-bold flex items-center space-x-2 transition ${
               activeTab === 'STAFF_QUEUE'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-amber-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Hàng đợi Staff ({documents.filter(d => d.status === 'IN_REVIEW').length})</span>
+            <span>Hang doi Staff ({documents.filter(d => d.status === 'IN_REVIEW').length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('MANAGER_QUEUE')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 transition ${
+            className={`px-3 py-2 rounded font-bold flex items-center space-x-2 transition ${
               activeTab === 'MANAGER_QUEUE'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Hàng đợi Manager ({documents.filter(d => d.status === 'APPROVED').length})</span>
+            <span>Hang doi Manager ({documents.filter(d => d.status === 'APPROVED').length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('ALL')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 transition ${
+            className={`px-3 py-2 rounded font-bold flex items-center space-x-2 transition ${
               activeTab === 'ALL'
                 ? 'bg-slate-800 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Tất cả tài liệu ({documents.length})</span>
+            <span>Tat ca tai lieu ({documents.length})</span>
           </button>
         </div>
 
-        {/* Severity filter & Search */}
-        <div className="flex items-center space-x-2 text-xs">
+        {/* Tim kiem va loc theo muc do sai lech */}
+        <div className="flex items-center space-x-2">
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
             <input
               type="text"
-              placeholder="Tìm tài liệu..."
+              placeholder="Tim ten tai lieu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-sky-500 outline-none w-44"
+              className="pl-8 pr-3 py-1.5 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-sky-500 outline-none w-48"
             />
           </div>
 
-          <div className="flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <div className="flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded px-2 py-1">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
               className="bg-transparent border-none text-xs font-medium text-slate-700 outline-none"
             >
-              <option value="ALL">Mọi mức Drift</option>
-              <option value="Critical">Critical Drift</option>
-              <option value="High">High Drift</option>
-              <option value="Medium">Medium Drift</option>
-              <option value="Low">Low Drift</option>
+              <option value="ALL">Moi muc sai lech</option>
+              <option value="Critical">Muc Critical</option>
+              <option value="High">Muc High</option>
+              <option value="Medium">Muc Medium</option>
+              <option value="Low">Muc Low</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Main Two-Column Layout */}
+      {/* Bo cuc 2 cot: Danh sach hang doi va Chi tiet xet duyet */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Documents List */}
+        {/* Cot trai: Danh sach tai lieu can duyet */}
         <div className="lg:col-span-4 space-y-3">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="bg-white rounded border border-slate-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Danh sách tài liệu ({filteredDocuments.length})
+                Tai lieu trong hang doi ({filteredDocuments.length})
               </span>
               <button
                 onClick={loadData}
                 className="text-slate-400 hover:text-slate-700 p-1 rounded"
-                title="Làm mới"
+                title="Tai lai danh sach"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -271,7 +280,7 @@ export default function WorkflowReviewPage() {
 
             {filteredDocuments.length === 0 ? (
               <div className="text-center py-8 text-xs text-slate-400">
-                Không có tài liệu nào phù hợp với bộ lọc.
+                Khong co tai lieu nao trong hang doi nay.
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -281,15 +290,15 @@ export default function WorkflowReviewPage() {
                     <div
                       key={doc.id}
                       onClick={() => setSelectedDocId(doc.id)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition text-xs ${
+                      className={`p-3.5 rounded border cursor-pointer transition text-xs ${
                         isSelected
-                          ? 'border-indigo-500 bg-indigo-50/40 shadow-sm ring-1 ring-indigo-500'
+                          ? 'border-sky-600 bg-sky-50/50 shadow-sm ring-1 ring-sky-600'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <h4 className="font-bold text-slate-900 line-clamp-1">{doc.title}</h4>
-                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 shrink-0">
                           v{doc.version}
                         </span>
                       </div>
@@ -301,7 +310,7 @@ export default function WorkflowReviewPage() {
 
                       <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
                         <span>{doc.category}</span>
-                        <span>{doc.lastModifiedBy || 'AI'}</span>
+                        <span>Nguoi cap nhat: {doc.lastModifiedBy || 'AI'}</span>
                       </div>
                     </div>
                   );
@@ -310,57 +319,48 @@ export default function WorkflowReviewPage() {
             )}
           </div>
 
-          {/* Workflow Status Reference Card */}
-          <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-xs space-y-3">
+          {/* Bang huong dan quy trinh cho sinh vien va giang vien */}
+          <div className="bg-slate-900 text-slate-300 p-4 rounded text-xs space-y-3 font-mono">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider flex items-center space-x-1.5">
               <ShieldCheck className="w-4 h-4 text-sky-400" />
-              <span>Quy trình chuyển dịch trạng thái</span>
+              <span>Bang Huong Dan Chuyen Trang Thai</span>
             </h4>
-            <div className="space-y-2 font-mono text-[11px]">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                <span className="font-semibold text-slate-200">DRAFT</span>
-                <ArrowRight className="w-3 h-3 text-slate-500" />
-                <span>Submit ➔ IN_REVIEW</span>
+            <div className="space-y-2 text-[11px]">
+              <div>
+                <span className="font-bold text-slate-200">1. DRAFT</span>: Ban nhap moi sinh ra, bam Submit de gui len Staff.
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span className="font-semibold text-amber-300">IN_REVIEW</span>
-                <ArrowRight className="w-3 h-3 text-slate-500" />
-                <span>Staff Duyệt ➔ APPROVED</span>
+              <div>
+                <span className="font-bold text-amber-300">2. IN_REVIEW</span>: Staff kiem tra code diff va phe duyet buoc 1.
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                <span className="font-semibold text-blue-300">APPROVED</span>
-                <ArrowRight className="w-3 h-3 text-slate-500" />
-                <span>Manager Publish ➔ PUBLISHED (v+1.0)</span>
+              <div>
+                <span className="font-bold text-blue-300">3. APPROVED</span>: Manager kiem tra lan cuoi va bam Xuat ban.
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
-                <span className="font-semibold text-rose-300">REJECTED</span>
-                <ArrowRight className="w-3 h-3 text-slate-500" />
-                <span>Trả về Developer sửa đổi</span>
+              <div>
+                <span className="font-bold text-emerald-300">4. PUBLISHED</span>: Xuat ban thanh cong va tu dong nang version.
+              </div>
+              <div>
+                <span className="font-bold text-red-300">5. REJECTED</span>: Tu choi va tra ve cho Developer sua lai.
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Selected Document Review & Diff View */}
+        {/* Cot phai: Chi tiet xet duyet tai lieu & So sanh Diff View */}
         <div className="lg:col-span-8 space-y-5">
           {selectedDoc ? (
             <>
-              {/* Review Control Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+              {/* Thong tin tai lieu va thanh hanh dong */}
+              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                        DOC-ID #{selectedDoc.id}
+                      <span className="text-xs font-mono font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                        Ma tai lieu: #{selectedDoc.id}
                       </span>
-                      <h2 className="text-lg font-bold text-slate-900">{selectedDoc.title}</h2>
+                      <h2 className="text-base font-bold text-slate-900">{selectedDoc.title}</h2>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Repository: <code className="font-mono text-sky-700">{selectedDoc.repository}</code> • Cập nhật lúc {new Date(selectedDoc.updatedAt).toLocaleTimeString()}
+                      Repository: <code className="font-mono text-slate-700">{selectedDoc.repository}</code> • Phien ban: <span className="font-bold text-slate-900">v{selectedDoc.version}</span>
                     </p>
                   </div>
 
@@ -370,94 +370,94 @@ export default function WorkflowReviewPage() {
                   </div>
                 </div>
 
-                {/* Role-Specific Action Bar */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs">
-                    <span className="font-semibold text-slate-700">Hành động khả dụng cho vai trò: </span>
-                    <span className="font-bold text-indigo-600 underline">{selectedRole}</span>
+                {/* Thanh nut hanh dong tuong ung theo tung vai tro */}
+                <div className="p-4 bg-slate-50 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-semibold text-slate-700">Quyen han hanh dong: </span>
+                    <span className="font-bold text-sky-700 underline">{selectedRole}</span>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {/* If Draft: Allow Submit */}
+                    {/* Neu trang thai la DRAFT: Cho phep gui di duyet */}
                     {selectedDoc.status === 'DRAFT' && (
                       <button
                         onClick={() => handleSubmitDraft(selectedDoc.id)}
-                        className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
+                        className="px-4 py-2 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
                       >
                         <Send className="w-3.5 h-3.5" />
-                        <span>Gửi đi duyệt (Submit for Review)</span>
+                        <span>Nop tai lieu di duyet (Submit)</span>
                       </button>
                     )}
 
-                    {/* If In Review: Allow Staff to Approve or Reject */}
+                    {/* Neu trang thai la IN_REVIEW: Staff co quyen Duyet hoac Tu choi */}
                     {selectedDoc.status === 'IN_REVIEW' && (
                       <>
                         <button
                           onClick={() => setShowRejectModal(true)}
-                          className="px-3.5 py-2 rounded-lg bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
+                          className="px-3.5 py-2 rounded bg-white border border-red-300 hover:bg-red-50 text-red-700 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
                         >
-                          <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                          <span>Từ chối (Reject)</span>
+                          <XCircle className="w-3.5 h-3.5 text-red-600" />
+                          <span>Tu choi (Reject)</span>
                         </button>
 
                         <button
                           onClick={() => handleStaffApprove(selectedDoc.id)}
-                          className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
+                          className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
                         >
                           <Check className="w-3.5 h-3.5" />
-                          <span>Staff Duyệt (Chuyển lên Manager)</span>
+                          <span>Staff Duyet buoc 1 (Len Manager)</span>
                         </button>
                       </>
                     )}
 
-                    {/* If Approved: Allow Manager to Publish or Reject */}
+                    {/* Neu trang thai la APPROVED: Manager co quyen Xuat ban hoac Tu choi */}
                     {selectedDoc.status === 'APPROVED' && (
                       <>
                         <button
                           onClick={() => setShowRejectModal(true)}
-                          className="px-3.5 py-2 rounded-lg bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
+                          className="px-3.5 py-2 rounded bg-white border border-red-300 hover:bg-red-50 text-red-700 text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
                         >
-                          <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                          <span>Từ chối / Yêu cầu sửa</span>
+                          <XCircle className="w-3.5 h-3.5 text-red-600" />
+                          <span>Tu choi / Tra ve</span>
                         </button>
 
                         <button
                           onClick={() => handleManagerPublish(selectedDoc.id)}
-                          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
+                          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition"
                         >
                           <ShieldCheck className="w-4 h-4" />
-                          <span>Manager Phê Duyệt & Xuất Bản</span>
+                          <span>Manager Phe Duyet & Xuat Ban</span>
                         </button>
                       </>
                     )}
 
-                    {/* If Published: Show indicator */}
+                    {/* Neu trang thai la PUBLISHED */}
                     {selectedDoc.status === 'PUBLISHED' && (
-                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center space-x-1">
+                      <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded border border-emerald-300 flex items-center space-x-1">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Tài liệu đã được xuất bản chính thức v{selectedDoc.version}</span>
+                        <span>Tai lieu da duoc xuat ban chinh thuc v{selectedDoc.version}</span>
                       </span>
                     )}
 
-                    {/* If Rejected: Show indicator and allow resubmit */}
+                    {/* Neu trang thai la REJECTED */}
                     {selectedDoc.status === 'REJECTED' && (
                       <button
                         onClick={() => handleSubmitDraft(selectedDoc.id)}
-                        className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
+                        className="px-3.5 py-1.5 rounded bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold flex items-center space-x-1.5 transition shadow-sm"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Gửi lại vào hàng đợi duyệt</span>
+                        <span>Gui lai vao hang doi xet duyet</span>
                       </button>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Integrated Diff View Component */}
+              {/* Tich hop truc tiep bo so sanh Diff View */}
               <DiffViewer
-                title={`So sánh phiên bản: ${selectedDoc.title}`}
-                oldVersion={`v${selectedDoc.version} (Hiện tại)`}
-                newVersion={`v${(parseFloat(selectedDoc.version) + 0.1).toFixed(1)} (AI Cập nhật)`}
+                title={`So sanh phien ban: ${selectedDoc.title}`}
+                oldVersion={`v${selectedDoc.version} (Hien tai)`}
+                newVersion={`v${(parseFloat(selectedDoc.version) + 0.1).toFixed(1)} (AI Cap nhat)`}
                 oldContent={selectedDoc.oldContent || ''}
                 newContent={selectedDoc.content || ''}
                 driftType={selectedDoc.driftType}
@@ -472,38 +472,36 @@ export default function WorkflowReviewPage() {
                 onDismiss={() => setShowRejectModal(true)}
               />
 
-              {/* System Audit Change Logs */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              {/* Nhat ky kiem duyet va lich su thay doi (Audit Log) */}
+              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                   <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
-                    <History className="w-4 h-4 text-indigo-600" />
-                    <span>Lịch Sử Thay Đổi & Nhật Ký Kiểm Duyệt (Audit Change Log)</span>
+                    <History className="w-4 h-4 text-slate-700" />
+                    <span>Lich Su Thay Doi & Nhat Ky Kiem Duyet (Audit Change Log)</span>
                   </h3>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {changeLogs.length} sự kiện ghi nhận
+                  <span className="text-xs text-slate-500 font-mono">
+                    {changeLogs.length} su kien ghi nhan
                   </span>
                 </div>
 
                 {changeLogs.length === 0 ? (
-                  <div className="text-xs text-slate-400 text-center py-4">Chưa có thay đổi nào.</div>
+                  <div className="text-xs text-slate-400 text-center py-4">Chua co nhat ky nao.</div>
                 ) : (
-                  <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                  <div className="space-y-3">
                     {changeLogs.map((log) => (
-                      <div key={log.id} className="relative text-xs">
-                        {/* Dot indicator */}
-                        <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-white ring-2 ring-indigo-200" />
+                      <div key={log.id} className="p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-slate-900 font-mono">[{log.role}]</span>
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[10px] text-slate-600">
+                            <span className="px-2 py-0.5 rounded bg-slate-200 font-mono text-[10px] text-slate-700 font-semibold">
                               {log.fromStatus} ➔ {log.toStatus}
                             </span>
                           </div>
-                          <span className="text-slate-400 font-mono text-[11px]">
-                            {new Date(log.timestamp).toLocaleString()}
+                          <span className="text-slate-500 font-mono text-[11px]">
+                            {new Date(log.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
-                        <p className="text-slate-600 mt-1 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <p className="text-slate-700 text-[11px] leading-relaxed">
                           {log.note}
                         </p>
                       </div>
@@ -513,43 +511,43 @@ export default function WorkflowReviewPage() {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-xs">
-              Vui lòng chọn tài liệu để bắt đầu kiểm duyệt.
+            <div className="bg-white rounded border border-slate-200 p-12 text-center text-slate-400 text-xs">
+              Vui long chon tai lieu de bat dau kiem duyet.
             </div>
           )}
         </div>
       </div>
 
-      {/* Reject Modal dialog */}
+      {/* Hop thoai nhap ly do tu choi tai lieu */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2 text-rose-600">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded p-6 max-w-md w-full shadow-xl space-y-4 border border-slate-200">
+            <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2 text-red-600">
               <XCircle className="w-5 h-5" />
-              <span>Từ Chối & Yêu Cầu Chỉnh Sửa Tài Liệu</span>
+              <span>Tu Choi & Yeu Cau Chinh Sua Tai Lieu</span>
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Vui lòng nêu rõ lý do từ chối (Ví dụ: thông tin endpoint chưa chính xác với code, thiếu bảng tham số) để tác giả hoặc AI sửa lại.
+              Vui long nhap ly do tu choi (Vi du: Thong tin API Endpoint chua khop voi code, thieu bang tham so request body) de tac gia biet va sua lai.
             </p>
             <textarea
               rows={4}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Nhập phản hồi chi tiết cho tài liệu này..."
-              className="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+              placeholder="Nhap phan hoi chi tiet tai day..."
+              className="w-full text-xs p-3 border border-slate-200 rounded focus:ring-1 focus:ring-red-500 outline-none"
             />
             <div className="flex justify-end space-x-2 pt-2">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded"
               >
-                Hủy bỏ
+                Huy bo
               </button>
               <button
                 onClick={handleReject}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm"
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow-sm"
               >
-                Xác nhận từ chối
+                Xac nhan tu choi
               </button>
             </div>
           </div>

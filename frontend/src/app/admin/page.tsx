@@ -22,7 +22,7 @@ export default function LeaderAdminDashboard() {
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-900">Bảng Quản Lý Dành Cho Leader & Quản Trị Hệ Thống</h1>
             <span className="px-2.5 py-0.5 text-xs bg-sky-100 text-sky-800 rounded font-semibold border border-sky-200">
-              👑 Team Leader / Admin
+              Role: Team Leader / Admin
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -146,3 +146,4 @@ export default function LeaderAdminDashboard() {
     </div>
   );
 }
+
