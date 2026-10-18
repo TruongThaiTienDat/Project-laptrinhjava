@@ -28,11 +28,56 @@ export interface DocumentItem {
 export interface ChangeLogItem {
   id: number;
   documentId: number;
-  role: 'AI' | 'Staff' | 'Manager' | 'AI/Developer' | 'Reviewer';
+  role: 'AI' | 'Staff' | 'Manager' | 'AI/Developer' | 'Reviewer' | 'Tech Lead' | 'System';
   fromStatus: string;
   toStatus: string;
   timestamp: string;
   note: string;
+}
+
+export interface CoverageGapItem {
+  id: string;
+  service: string;
+  sourceFile: string;
+  entityName: string;
+  signature: string;
+  type: 'ENDPOINT' | 'METHOD' | 'SCHEMA';
+  status: 'MISSING_DOC' | 'NEEDS_UPDATE';
+  priority: 'Critical' | 'High' | 'Medium';
+  lastCommit: string;
+  suggestedDocTitle: string;
+}
+
+export interface ImpactAnalysisItem {
+  id: string;
+  sourceEntity: string;
+  sourceFile: string;
+  service: string;
+  changeType: 'Signature Drift' | 'Semantic Drift' | 'Referential Drift';
+  severity: 'Critical' | 'High' | 'Medium' | 'Low';
+  pullRequest: string;
+  affectedDocuments: string[];
+  cascadeServices: string[];
+  riskScore: number;
+  description: string;
+}
+
+export interface VersionMilestoneItem {
+  version: string;
+  releaseDate: string;
+  status: 'CURRENT' | 'STABLE' | 'DEPRECATED';
+  totalDocs: number;
+  releasedBy: string;
+  notes: string;
+}
+
+export interface GovernancePolicy {
+  autoUpdateOnPR: boolean;
+  blockPRMergeOnCriticalDrift: boolean;
+  minConfidenceThreshold: number;
+  autoAlertZaloOA: boolean;
+  requireStaffReview: boolean;
+  snapshotBeforePublish: boolean;
 }
 
 export interface TemplateItem {
@@ -236,6 +281,131 @@ let mockChangeLogs: ChangeLogItem[] = [
   }
 ];
 
+export const initialCoverageGaps: CoverageGapItem[] = [
+  {
+    id: 'gap-1',
+    service: 'Payment Microservice',
+    sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
+    entityName: 'checkTransactionStatus',
+    signature: 'public TxnStatus checkTransactionStatus(String txnCode)',
+    type: 'METHOD',
+    status: 'MISSING_DOC',
+    priority: 'Critical',
+    lastCommit: '9a31bc4',
+    suggestedDocTitle: 'PaymentGateway_VietQR.md - Tra cứu trạng thái giao dịch'
+  },
+  {
+    id: 'gap-2',
+    service: 'Notification Integration',
+    sourceFile: 'backend/src/main/java/com/livingdocs/notification/ZaloOAService.java',
+    entityName: 'verifyZaloWebhookSignature',
+    signature: 'public boolean verifyZaloWebhookSignature(String signature, String payload)',
+    type: 'METHOD',
+    status: 'MISSING_DOC',
+    priority: 'High',
+    lastCommit: 'e319fa0',
+    suggestedDocTitle: 'ZaloOA_Webhook_Notification.md - Xác thực chữ ký Webhook'
+  },
+  {
+    id: 'gap-3',
+    service: 'Backend Core Workflow',
+    sourceFile: 'backend/src/main/java/com/livingdocs/controller/WorkflowController.java',
+    entityName: 'getAuditLogs',
+    signature: 'public ResponseEntity<AuditResponse> getAuditLogs(@PathVariable Long id)',
+    type: 'ENDPOINT',
+    status: 'NEEDS_UPDATE',
+    priority: 'Medium',
+    lastCommit: 'f5db245',
+    suggestedDocTitle: 'README.md - Hướng dẫn gọi API kiểm toán'
+  }
+];
+
+let mockCoverageGaps: CoverageGapItem[] = [...initialCoverageGaps];
+
+export const initialImpactItems: ImpactAnalysisItem[] = [
+  {
+    id: 'impact-1',
+    sourceEntity: 'VietQRService.java',
+    sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
+    service: 'Payment Microservice',
+    changeType: 'Semantic Drift',
+    severity: 'Critical',
+    pullRequest: '#6 KAN-21: Chuyển đổi mã QR sang Napas 247 động',
+    affectedDocuments: ['PaymentGateway_VietQR.md', 'Architecture_Overview.md'],
+    cascadeServices: ['Redis Cache (:6379)', 'PostgreSQL DB (:5432)', 'Zalo OA Alert'],
+    riskScore: 92,
+    description: 'Thay đổi luồng xử lý từ mã QR tĩnh sang webhook nhận diện thanh toán tự động qua Napas 247. Sai lệch tài liệu có thể gây lỗi tích hợp cổng thanh toán.'
+  },
+  {
+    id: 'impact-2',
+    sourceEntity: 'WorkflowController.java',
+    sourceFile: 'backend/src/main/java/com/livingdocs/controller/WorkflowController.java',
+    service: 'Backend Core Workflow',
+    changeType: 'Signature Drift',
+    severity: 'High',
+    pullRequest: '#4 KAN-17: Hoàn thành API luồng xét duyệt 2 cấp',
+    affectedDocuments: ['README.md (v1.0 ➔ v2.0)', 'OpenAPI_Specification.json'],
+    cascadeServices: ['Kafka Event Broker (:9092)', 'Frontend Workflow Review UI'],
+    riskScore: 78,
+    description: 'Tách endpoint PUT /api/workflow/{id} thành luồng 2 cấp: staff-approve và manager-publish. Cần cập nhật toàn bộ API reference cho client.'
+  },
+  {
+    id: 'impact-3',
+    sourceEntity: 'ast_analyzer.py',
+    sourceFile: 'ai-engine/app/parser/ast_analyzer.py',
+    service: 'AI Engine Parser',
+    changeType: 'Referential Drift',
+    severity: 'Low',
+    pullRequest: '#2 KAN-9: Nâng cấp AST Tree-Sitter',
+    affectedDocuments: ['FastAPI_AST_Parser.md'],
+    cascadeServices: ['ChromaDB Vector Store', 'FastAPI Microservice (:8000)'],
+    riskScore: 35,
+    description: 'Thay thế regex parser bằng Abstract Syntax Tree của Tree-Sitter giúp loại bỏ false positives khi trích xuất code entities.'
+  }
+];
+
+let mockImpactItems: ImpactAnalysisItem[] = [...initialImpactItems];
+
+export const initialVersionMilestones: VersionMilestoneItem[] = [
+  {
+    version: '2.0',
+    releaseDate: 'Hôm nay (Vừa xong)',
+    status: 'CURRENT',
+    totalDocs: 4,
+    releasedBy: 'Manager & Tech Lead',
+    notes: 'Phiên bản hoàn thiện quy trình kiểm duyệt 2 cấp, AST Parser và Napas 247 dynamic QR.'
+  },
+  {
+    version: '1.2',
+    releaseDate: 'Hôm qua',
+    status: 'STABLE',
+    totalDocs: 3,
+    releasedBy: 'Staff Reviewer',
+    notes: 'Hỗ trợ đặc tả cổng thanh toán VietQR tĩnh và tích hợp Redis Cache cho session.'
+  },
+  {
+    version: '1.0',
+    releaseDate: '2 ngày trước',
+    status: 'DEPRECATED',
+    totalDocs: 2,
+    releasedBy: 'System Init',
+    notes: 'Bản phát hành đầu tiên khởi tạo dự án LivingDocs và hạ tầng Docker Compose.'
+  }
+];
+
+let mockVersionMilestones: VersionMilestoneItem[] = [...initialVersionMilestones];
+
+export const initialGovernancePolicy: GovernancePolicy = {
+  autoUpdateOnPR: true,
+  blockPRMergeOnCriticalDrift: true,
+  minConfidenceThreshold: 85,
+  autoAlertZaloOA: true,
+  requireStaffReview: true,
+  snapshotBeforePublish: true
+};
+
+export let currentGovernancePolicy: GovernancePolicy = { ...initialGovernancePolicy };
+
 export const workflowApi = {
   // Lấy toàn bộ danh sách tài liệu
   async getDocuments(): Promise<DocumentItem[]> {
@@ -380,6 +550,102 @@ export const workflowApi = {
   // Lấy toàn bộ audit logs hệ thống
   async getAllLogs(): Promise<ChangeLogItem[]> {
     return [...mockChangeLogs].reverse();
+  },
+
+  // Lấy danh sách khoảng trống tài liệu (Coverage Gaps)
+  async getCoverageGaps(): Promise<CoverageGapItem[]> {
+    return [...mockCoverageGaps];
+  },
+
+  // AI tự động sinh tài liệu giải quyết khoảng trống
+  async resolveCoverageGap(id: string): Promise<{ message: string; data: CoverageGapItem }> {
+    const gap = mockCoverageGaps.find(g => g.id === id);
+    if (!gap) throw new Error('Không tìm thấy khoảng trống tài liệu');
+    gap.status = 'MISSING_DOC'; // Resolved in background
+    mockCoverageGaps = mockCoverageGaps.filter(g => g.id !== id);
+
+    // Ghi nhận nhật ký audit
+    mockChangeLogs.push({
+      id: mockChangeLogs.length + 1,
+      documentId: 1,
+      role: 'AI',
+      fromStatus: 'COVERAGE_GAP',
+      toStatus: 'DRAFT',
+      timestamp: new Date().toISOString(),
+      note: `AI Engine đã tự động phân tích AST và tạo tài liệu bổ sung cho ${gap.entityName}() (${gap.service})`
+    });
+
+    return {
+      message: `Đã kích hoạt AI Engine sinh tài liệu bổ sung cho ${gap.entityName}() thành công!`,
+      data: gap
+    };
+  },
+
+  // Lấy dữ liệu phân tích tác động dây chuyền (Impact Analysis)
+  async getImpactAnalysis(): Promise<ImpactAnalysisItem[]> {
+    return [...mockImpactItems];
+  },
+
+  // Lấy danh sách các mốc phiên bản phát hành (Version Milestones)
+  async getVersionMilestones(): Promise<VersionMilestoneItem[]> {
+    return [...mockVersionMilestones];
+  },
+
+  // Lấy chính sách quản trị hiện hành
+  async getGovernancePolicy(): Promise<GovernancePolicy> {
+    return { ...currentGovernancePolicy };
+  },
+
+  // Cập nhật chính sách quản trị
+  async updateGovernancePolicy(policy: GovernancePolicy): Promise<{ message: string }> {
+    currentGovernancePolicy = { ...policy };
+    mockChangeLogs.push({
+      id: mockChangeLogs.length + 1,
+      documentId: 1,
+      role: 'Tech Lead',
+      fromStatus: 'CONFIG_ACTIVE',
+      toStatus: 'CONFIG_UPDATED',
+      timestamp: new Date().toISOString(),
+      note: `Tech Lead cập nhật chính sách quản trị hệ thống: Ngưỡng tin cậy AI = ${policy.minConfidenceThreshold}%, Chặn PR Critical = ${policy.blockPRMergeOnCriticalDrift ? 'Bật' : 'Tắt'}`
+    });
+    return { message: 'Đã lưu cấu hình chính sách quản trị thành công!' };
+  },
+
+  // Thực hiện Rollback phiên bản khẩn cấp
+  async rollbackToMilestone(version: string, reason: string): Promise<{ message: string }> {
+    mockChangeLogs.push({
+      id: mockChangeLogs.length + 1,
+      documentId: 1,
+      role: 'Tech Lead',
+      fromStatus: 'CURRENT_v2.0',
+      toStatus: `ROLLBACK_v${version}`,
+      timestamp: new Date().toISOString(),
+      note: `Tech Lead kích hoạt Rollback khẩn cấp toàn bộ hệ thống về điểm mốc ổn định v${version}. Lý do: ${reason}`
+    });
+
+    // Update document versions to match rollback
+    mockDocuments.forEach(doc => {
+      doc.version = version;
+      doc.status = 'APPROVED';
+      doc.updatedAt = new Date().toISOString();
+    });
+
+    return {
+      message: `Đã khôi phục toàn bộ hệ thống tài liệu về phiên bản v${version} thành công!`
+    };
+  },
+
+  // Thêm nhật ký tùy chỉnh
+  async addCustomLog(role: any, fromStatus: string, toStatus: string, note: string): Promise<void> {
+    mockChangeLogs.push({
+      id: mockChangeLogs.length + 1,
+      documentId: 1,
+      role,
+      fromStatus,
+      toStatus,
+      timestamp: new Date().toISOString(),
+      note
+    });
   }
 };
 
