@@ -25,6 +25,11 @@ ai-engine/*.pyc
 ai-engine/.venv/
 ai-engine/venv/
 ai-engine/.env
+**/__pycache__/
+
+# Node / Express (Backend Workflow)
+backend/node_modules/
+backend/database.json
 
 # Misc
 .env
