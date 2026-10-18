@@ -140,7 +140,7 @@ export default function TechLeadDashboardPage() {
       autoUpdateOnPR: true,
       blockPRMergeOnCriticalDrift: true,
       minConfidenceThreshold: 85,
-      autoAlertZaloOA: true,
+      autoAlertWebhook: true,
       requireStaffReview: true,
       snapshotBeforePublish: true
     });
@@ -170,7 +170,7 @@ export default function TechLeadDashboardPage() {
     const coveragePercentage = totalGaps === 0 ? '100%' : '82.4%';
     return `# BÁO CÁO QUẢN TRỊ VÀ SỨC KHỎE TÀI LIỆU KỸ THUẬT LIVINGDOCS
 Thời gian xuất: ${new Date().toLocaleString('vi-VN')}
-Người phụ trách: Technical Lead (Phần 5: ReactJS/Next.js Governance)
+Người phụ trách: Technical Lead / Documentation Manager
 Dự án: LivingDocs - Hệ thống tài liệu tự cập nhật bằng AI
 Repository: TruongThaiTienDat/Project-laptrinhjava
 
@@ -189,17 +189,17 @@ Repository: TruongThaiTienDat/Project-laptrinhjava
 - Chặn hợp nhất Pull Request khi có Critical Drift: ${policy.blockPRMergeOnCriticalDrift ? 'BẬT (Khóa an toàn CI/CD)' : 'TẮT'}
 - Ngưỡng tin cậy tối thiểu của AI (Confidence Threshold): ${policy.minConfidenceThreshold}%
 - Yêu cầu kiểm duyệt 2 cấp (Human-in-the-Loop): ${policy.requireStaffReview ? 'BẬT (Staff kiểm tra ➔ Manager xuất bản)' : 'TẮT'}
-- Thông báo cảnh báo khẩn cấp qua Zalo OA: ${policy.autoAlertZaloOA ? 'BẬT' : 'TẮT'}
+- Thông báo cảnh báo khẩn cấp qua Webhook: ${policy.autoAlertWebhook ? 'BẬT' : 'TẮT'}
 - Tự động sao lưu Snapshot trước xuất bản: ${policy.snapshotBeforePublish ? 'BẬT' : 'TẮT'}
 
 ## 3. PHÂN TÍCH TÁC ĐỘNG MÃ NGUỒN (IMPACT ANALYSIS)
-- VietQRService.java: Semantic Drift (Mức độ Critical) - Tác động Napas 247 dynamic QR
+- GitHubWebhookController.java: Semantic Drift (Mức độ Critical) - Tác động GitHub Webhook payload
 - WorkflowController.java: Signature Drift (Mức độ High) - Tách luồng duyệt 2 cấp
 - ast_analyzer.py: Referential Drift (Mức độ Low) - Nâng cấp parser Tree-Sitter
 
 ## 4. CÁC MỐC PHIÊN BẢN HỆ THỐNG (MILESTONES)
-- v2.0 (Bản hiện tại): Hoàn thiện kiểm duyệt 2 cấp, AST Parser, VietQR động
-- v1.2 (Bản ổn định): VietQR tĩnh, Redis Cache
+- v2.0 (Bản hiện tại): Hoàn thiện kiểm duyệt 2 cấp, AST Parser, GitHub Webhook
+- v1.2 (Bản ổn định): GitHub repository sync, Redis Cache
 - v1.0 (Bản gốc ban đầu): Khởi tạo dự án LivingDocs
 
 Báo cáo được tổng hợp tự động từ hệ thống LivingDocs Governance Engine.`;
@@ -880,20 +880,20 @@ Báo cáo được tổng hợp tự động từ hệ thống LivingDocs Govern
                 />
               </div>
 
-              {/* Policy 5: Zalo OA Emergency Alerts */}
+              {/* Policy 5: Webhook Emergency Alerts */}
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="max-w-lg">
                   <span className="font-bold text-slate-900 block text-sm">
-                    Thông Báo Cảnh Báo Khẩn Cấp Qua Zalo Official Account (Zalo OA)
+                    Thông Báo Cảnh Báo Khẩn Cấp Qua Webhook / Email
                   </span>
                   <p className="text-slate-500 text-[11px] mt-0.5">
-                    Tự động gửi tin nhắn kèm đường link kiểm duyệt nhanh đến nhóm kỹ thuật qua Webhook khi phát hiện sai lệch mức độ Critical.
+                    Tự động gửi thông báo đến nhóm kỹ thuật qua Webhook khi phát hiện sai lệch mức độ Critical.
                   </p>
                 </div>
                 <input
                   type="checkbox"
-                  checked={policy.autoAlertZaloOA}
-                  onChange={(e) => setPolicy({ ...policy, autoAlertZaloOA: e.target.checked })}
+                  checked={policy.autoAlertWebhook}
+                  onChange={(e) => setPolicy({ ...policy, autoAlertWebhook: e.target.checked })}
                   className="w-5 h-5 text-purple-600 rounded cursor-pointer accent-purple-600"
                 />
               </div>
@@ -1250,7 +1250,7 @@ Báo cáo được tổng hợp tự động từ hệ thống LivingDocs Govern
                   rows={3}
                   value={rollbackReason}
                   onChange={(e) => setRollbackReason(e.target.value)}
-                  placeholder="Ví dụ: Phát hiện sai lệch nghiêm trọng trong tài liệu cổng thanh toán VietQR..."
+                  placeholder="Ví dụ: Phát hiện sai lệch nghiêm trọng trong tài liệu GitHub Webhook Controller..."
                   className="w-full p-2.5 border border-slate-200 rounded-xl text-xs outline-none focus:ring-1 focus:ring-rose-500"
                 />
               </div>

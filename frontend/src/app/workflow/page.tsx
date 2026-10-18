@@ -150,11 +150,11 @@ export default function WorkflowReviewPage() {
           </p>
         </div>
 
-        {/* Chon vai tro thao tac de giao vien de dang kiem thu */}
+        {/* Chọn vai trò thao tác */}
         <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded border border-slate-200 text-xs">
           <span className="text-slate-600 font-semibold px-1 flex items-center space-x-1">
             <UserCheck className="w-3.5 h-3.5 text-sky-600" />
-            <span>Thao tac voi vai tro:</span>
+            <span>Vai trò:</span>
           </span>
           <div className="flex space-x-1">
             {(['Staff', 'Manager', 'Developer'] as const).map(r => (
@@ -319,7 +319,7 @@ export default function WorkflowReviewPage() {
             )}
           </div>
 
-          {/* Bang huong dan quy trinh cho sinh vien va giang vien */}
+          {/* Bảng hướng dẫn chuyển trạng thái quy trình */}
           <div className="bg-slate-900 text-slate-300 p-4 rounded text-xs space-y-3 font-mono">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider flex items-center space-x-1.5">
               <ShieldCheck className="w-4 h-4 text-sky-400" />

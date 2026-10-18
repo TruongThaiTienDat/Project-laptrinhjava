@@ -1,188 +1,177 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  GitCompare, 
-  Workflow, 
-  BookOpen, 
-  LayoutDashboard, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Sparkles, 
-  ArrowRight, 
-  ShieldCheck, 
-  Layers, 
-  GitPullRequest,
-  Clock
+  workflowApi, 
+  DocumentItem 
+} from '@/services/api';
+import { 
+  FileText, 
+  Clock, 
+  CheckCircle, 
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
-export default function LivingDocsHome() {
-  const modules = [
-    {
-      title: 'Xét Duyệt Quy Trình (Workflow UI)',
-      desc: 'Quản lý luồng kiểm duyệt 2 cấp: Staff rà soát nội dung & Manager phê duyệt xuất bản chính thức.',
-      href: '/workflow',
-      icon: <Workflow className="w-6 h-6 text-indigo-500" />,
-      color: 'border-indigo-200 hover:border-indigo-400',
-      badge: 'Bắt buộc quy trình',
-      actionText: 'Vào luồng xét duyệt'
-    },
-    {
-      title: 'Bộ So Sánh Sai Lệch (Diff View)',
-      desc: 'Trực quan hóa khác biệt giữa tài liệu hiện tại và bản tự cập nhật từ AI, hiển thị bằng chứng (Grounding Evidence).',
-      href: '/diff',
-      icon: <GitCompare className="w-6 h-6 text-sky-500" />,
-      color: 'border-sky-200 hover:border-sky-400',
-      badge: 'Split & Unified',
-      actionText: 'Mở bộ so sánh'
-    },
-    {
-      title: 'Kho Tri Thức & Code (Knowledge Base)',
-      desc: 'Tìm kiếm tài liệu kết nối thực thể AST, duyệt cây quan hệ Document-to-Code và các mẫu template.',
-      href: '/knowledge-base',
-      icon: <BookOpen className="w-6 h-6 text-emerald-500" />,
-      color: 'border-emerald-200 hover:border-emerald-400',
-      badge: 'AST Connected',
-      actionText: 'Khám phá kho tri thức'
-    },
-    {
-      title: 'Bảng Điều Khiển Tech Lead',
-      desc: 'Theo dõi chỉ số sức khỏe tài liệu, tỷ lệ bao phủ (Coverage Gaps), quản trị mẫu và lịch sử thay đổi (Change Logs).',
-      href: '/dashboard',
-      icon: <LayoutDashboard className="w-6 h-6 text-purple-500" />,
-      color: 'border-purple-200 hover:border-purple-400',
-      badge: 'Governance & Metrics',
-      actionText: 'Xem dashboard kỹ thuật'
+export default function HomePage() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+
+  useEffect(() => {
+    workflowApi.getDocuments().then(docs => setDocuments(docs));
+  }, []);
+
+  // Hàm chuyển đổi trạng thái sang tiếng Việt
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'DRAFT':
+        return { label: 'Bản nháp', className: 'bg-slate-100 text-slate-700' };
+      case 'IN_REVIEW':
+        return { label: 'Chờ duyệt', className: 'bg-amber-100 text-amber-800' };
+      case 'APPROVED':
+        return { label: 'Đã duyệt', className: 'bg-blue-100 text-blue-800' };
+      case 'PUBLISHED':
+        return { label: 'Đã xuất bản', className: 'bg-emerald-100 text-emerald-800' };
+      case 'REJECTED':
+        return { label: 'Bị từ chối', className: 'bg-red-100 text-red-800' };
+      default:
+        return { label: status, className: 'bg-slate-100 text-slate-700' };
     }
-  ];
+  };
+
+  // Hàm hiển thị mức độ lệch
+  const getDriftSeverityBadge = (severity?: string) => {
+    switch (severity) {
+      case 'Critical':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Critical</span>;
+      case 'High':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">High</span>;
+      case 'Medium':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Medium</span>;
+      case 'Low':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">Low</span>;
+      default:
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">None</span>;
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-8 border border-slate-800 shadow-xl">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-400 text-xs font-semibold mb-4 border border-sky-500/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Nhiệm vụ Thành viên 5: ReactJS / Next.js Frontend Specialist</span>
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-            LivingDocs System
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Hệ thống tài liệu tự cập nhật với sự hỗ trợ của trí tuệ nhân tạo (AI-Assisted Self-Updating Document System).
-            Tự động phát hiện <span className="text-sky-400 font-semibold">Documentation Drift</span> từ Pull Request & Commit, 
-            kết hợp quy trình kiểm duyệt có kiểm soát <span className="text-indigo-400 font-semibold">Human-in-the-Loop</span> (Staff & Manager).
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link
-              href="/workflow"
-              className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs transition shadow-lg shadow-sky-500/30"
-            >
-              <Workflow className="w-4 h-4" />
-              <span>Vào hàng đợi xét duyệt (Staff / Manager)</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </Link>
-            <Link
-              href="/diff"
-              className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700"
-            >
-              <GitCompare className="w-4 h-4 text-sky-400" />
-              <span>Thử nghiệm Diff View Component</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Decorative background glow */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-sky-500/10 to-transparent pointer-events-none" />
-      </div>
-
-      {/* Key Metric Highlights */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Tài liệu quản lý</span>
-            <span className="p-2 bg-sky-50 text-sky-600 rounded-lg">
-              <Layers className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold text-slate-900">4</div>
-          <div className="text-xs text-emerald-600 font-medium mt-1">100% được liên kết AST Code</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Chờ duyệt (In Review)</span>
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <Clock className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold text-amber-600">1</div>
-          <div className="text-xs text-slate-500 font-medium mt-1">Staff cần kiểm tra bước 1</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Chờ xuất bản (Approved)</span>
-            <span className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <CheckCircle2 className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold text-blue-600">1</div>
-          <div className="text-xs text-slate-500 font-medium mt-1">Manager sẵn sàng ấn Publish</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Độ tin cậy AI</span>
-            <span className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <Sparkles className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold text-emerald-600">96.4%</div>
-          <div className="text-xs text-emerald-600 font-medium mt-1">Kèm Grounding Evidence</div>
-        </div>
-      </div>
-
-      {/* 4 Core Functional Modules */}
+    <div className="space-y-6">
+      {/* Tiêu đề trang */}
       <div>
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-slate-900">Các Thành Phần Chức Năng Cốt Lõi (Phần 5 Frontend)</h2>
-          <p className="text-xs text-slate-500">Được xây dựng đầy đủ theo đề cương LivingDocs và phân công nhiệm vụ</p>
+        <h1 className="text-xl font-bold text-slate-800">Tổng quan hệ thống</h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Theo dõi số lượng tài liệu kỹ thuật và các thay đổi mã nguồn gần đây.
+        </p>
+      </div>
+
+      {/* 4 ô thống kê số liệu tiêu chuẩn */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Ô 1: Tổng số tài liệu */}
+        <div className="bg-white p-4 rounded border border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Tổng số tài liệu</span>
+            <FileText className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">4</div>
+          <div className="text-xs text-slate-500 mt-1">Đang hoạt động</div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {modules.map((m) => (
-            <div
-              key={m.href}
-              className={`bg-white rounded-xl p-6 border transition shadow-sm hover:shadow-md flex flex-col justify-between ${m.color}`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    {m.icon}
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-100 text-slate-700">
-                    {m.badge}
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 mb-1.5">{m.title}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">{m.desc}</p>
-              </div>
+        {/* Ô 2: Chờ duyệt */}
+        <div className="bg-white p-4 rounded border border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Chờ duyệt</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">1</div>
+          <div className="text-xs text-amber-600 mt-1">Cần kiểm tra</div>
+        </div>
 
-              <Link
-                href={m.href}
-                className="inline-flex items-center space-x-1.5 text-xs font-bold text-sky-600 hover:text-sky-700 pt-3 border-t border-slate-100"
-              >
-                <span>{m.actionText}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          ))}
+        {/* Ô 3: Đã duyệt */}
+        <div className="bg-white p-4 rounded border border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Đã duyệt</span>
+            <CheckCircle className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">1</div>
+          <div className="text-xs text-blue-600 mt-1">Sẵn sàng xuất bản</div>
+        </div>
+
+        {/* Ô 4: Tự động hóa */}
+        <div className="bg-white p-4 rounded border border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Tự động hóa</span>
+            <Sparkles className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">88.5%</div>
+          <div className="text-xs text-emerald-600 mt-1">Được sinh tự động</div>
+        </div>
+      </div>
+
+      {/* Bảng dữ liệu: Danh sách tài liệu cập nhật gần đây */}
+      <div className="bg-white rounded border border-slate-200">
+        <div className="p-4 border-b border-slate-200">
+          <h2 className="text-sm font-semibold text-slate-800">
+            Danh sách tài liệu cập nhật gần đây
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
+                <th className="py-3 px-4">Tên tài liệu</th>
+                <th className="py-3 px-4">File code liên kết</th>
+                <th className="py-3 px-4">Commit / PR</th>
+                <th className="py-3 px-4">Mức độ lệch</th>
+                <th className="py-3 px-4">Trạng thái</th>
+                <th className="py-3 px-4 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {documents.map((doc) => {
+                const statusInfo = getStatusText(doc.status);
+                const codeFile = doc.groundingEvidence?.sourceFile || 'Chưa liên kết';
+                const prCommit = doc.groundingEvidence?.pullRequest 
+                  ? `${doc.groundingEvidence.pullRequest.split(':')[0]} - ${doc.groundingEvidence.commitHash.slice(0, 7)}`
+                  : 'Commit mới';
+
+                return (
+                  <tr key={doc.id} className="hover:bg-slate-50">
+                    <td className="py-3 px-4">
+                      <div className="font-medium text-slate-800">{doc.title.split(' - ')[0]}</div>
+                      <div className="text-slate-400 text-[11px] truncate max-w-xs">{doc.title}</div>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600">
+                      {codeFile.split('/').pop()}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                      {prCommit}
+                    </td>
+                    <td className="py-3 px-4">
+                      {getDriftSeverityBadge(doc.driftSeverity)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusInfo.className}`}>
+                        {statusInfo.label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Link
+                        href="/workflow"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        <span>Xem chi tiết</span>
+                        <ArrowRight className="w-3 h-3 ml-1" />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
-

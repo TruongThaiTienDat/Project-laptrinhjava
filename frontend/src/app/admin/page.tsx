@@ -62,7 +62,7 @@ export default function LeaderAdminDashboard() {
             </div>
           </div>
           <div className="mt-3 text-lg font-bold text-emerald-600">Active (Port 6379)</div>
-          <p className="text-[11px] text-slate-400 mt-1">Caching Session & VietQR Txn</p>
+          <p className="text-[11px] text-slate-400 mt-1">Caching Session & GitHub Payload</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -108,7 +108,7 @@ export default function LeaderAdminDashboard() {
             <tbody className="divide-y divide-slate-100">
               <tr className="hover:bg-slate-50">
                 <td className="py-3 px-4 text-slate-500">Vừa xong</td>
-                <td className="py-3 px-4 font-bold text-slate-900">Next.js Frontend (TV5)</td>
+                <td className="py-3 px-4 font-bold text-slate-900">Next.js Frontend</td>
                 <td className="py-3 px-4 text-slate-700">Tích hợp Diff View, Knowledge Base, Workflow Review UI & Tech Lead Dashboard</td>
                 <td className="py-3 px-4">
                   <span className="font-bold text-emerald-600 flex items-center space-x-1">
@@ -119,7 +119,7 @@ export default function LeaderAdminDashboard() {
               </tr>
               <tr className="hover:bg-slate-50">
                 <td className="py-3 px-4 text-slate-500">10 phút trước</td>
-                <td className="py-3 px-4 font-bold text-slate-900">Backend Workflow (TV3)</td>
+                <td className="py-3 px-4 font-bold text-slate-900">Backend Workflow</td>
                 <td className="py-3 px-4 text-slate-700">Hoàn thành API luồng xét duyệt tài liệu và audit log KAN-17</td>
                 <td className="py-3 px-4">
                   <span className="font-bold text-emerald-600 flex items-center space-x-1">
@@ -130,7 +130,7 @@ export default function LeaderAdminDashboard() {
               </tr>
               <tr className="hover:bg-slate-50">
                 <td className="py-3 px-4 text-slate-500">Hôm qua</td>
-                <td className="py-3 px-4 font-bold text-slate-900">Docker Infrastructure (TV1)</td>
+                <td className="py-3 px-4 font-bold text-slate-900">Docker Infrastructure</td>
                 <td className="py-3 px-4 text-slate-700">Khởi tạo dịch vụ Postgres, Redis, Kafka, DLQ UI KAN-10</td>
                 <td className="py-3 px-4">
                   <span className="font-bold text-emerald-600 flex items-center space-x-1">

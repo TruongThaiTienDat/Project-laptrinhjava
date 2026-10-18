@@ -101,44 +101,44 @@ Tai lieu bat buoc phai qua Staff kiem tra truoc khi den Manager.`
   },
   {
     id: 'ent-2',
-    entityName: 'VietQRService.java',
-    category: 'Payment Microservice',
-    packagePath: 'com.livingdocs.payment.VietQRService',
-    filePath: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
+    entityName: 'GitHubWebhookController.java',
+    category: 'GitHub Integration',
+    packagePath: 'com.livingdocs.controller.GitHubWebhookController',
+    filePath: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
     docCoverage: '66%',
     statusBadge: 'Co canh bao Drift',
     methods: [
       {
-        name: 'generateDynamicVietQR(PaymentRequest req)',
-        signature: 'public VietQRPayment generateDynamicVietQR(PaymentRequest req)',
+        name: 'handleGitHubWebhook(GitHubPayload payload)',
+        signature: 'public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload)',
         status: 'DOCUMENTED',
-        docTitle: 'PaymentGateway_VietQR.md',
-        description: 'Khoi tao ma QR Napas 247 dong kem so tien va ma giao dich.'
+        docTitle: 'GitHub_Webhook_Guide.md',
+        description: 'Lang nghe su kien Push va Pull Request tu GitHub Webhook de tu dong phat hien Drift.'
       },
       {
-        name: 'handleBankWebhook(NapasPayload payload)',
-        signature: 'public ResponseEntity<?> handleBankWebhook(@RequestBody NapasPayload payload)',
+        name: 'verifyWebhookSignature(String signature, String payload)',
+        signature: 'public boolean verifyWebhookSignature(String signature, String payload)',
         status: 'DOCUMENTED',
-        docTitle: 'PaymentGateway_VietQR.md',
-        description: 'Lang nghe Webhook ngan hang tra ve de tu dong xac nhan thanh toan.'
+        docTitle: 'GitHub_Webhook_Guide.md',
+        description: 'Kiem tra chu ky bao mat HMAC-SHA256 tu Webhook secret cua GitHub.'
       },
       {
-        name: 'checkTransactionStatus(String txnCode)',
-        signature: 'public TxnStatus checkTransactionStatus(@PathVariable String txnCode)',
+        name: 'processBranchDrift(String branch)',
+        signature: 'public DriftReport processBranchDrift(@PathVariable String branch)',
         status: 'MISSING_DOC',
         docTitle: 'Chua co tai lieu',
-        description: 'Tra cuu trang thai giao dich truc tiep tu Redis Cache.'
+        description: 'Kich hoat quet toan bo cay AST cua nhanh khi co merge request.'
       }
     ],
-    docContent: `# Tai Lieu Huong Dan: VietQR Service
+    docContent: `# Tai Lieu Huong Dan: GitHub Webhook Controller
 
-## 1. Tong Quan Cong Thanh Toan
-Tich hop cong thanh toan tu dong qua Napas 247 VietQR.
+## 1. Tong Quan Tich Hop GitHub
+Tich hop lang nghe su kien tu dong qua GitHub Webhook.
 
 ## 2. Quy Trinh Xu Ly
-- Khach hang yeu cau nang cap goi dich vu.
-- He thong sinh ma QR dong chua dung so tien va ma don hang.
-- Ngan hang gui webhook thong bao ve backend.`
+- Lap trinh vien tao Pull Request hoac Push commit len GitHub.
+- GitHub gui payload chua danh sach commit va diff file ve backend.
+- LivingDocs phan tich AST va kich hoat kiem tra Documentation Drift.`
   },
   {
     id: 'ent-3',
@@ -179,31 +179,31 @@ Dich vu FastAPI chiu trach nhiem doc ma nguon va trich xuat cay cu phap:
   },
   {
     id: 'ent-4',
-    entityName: 'ZaloOAService.java',
-    category: 'Notification Integration',
-    packagePath: 'com.livingdocs.notification.ZaloOAService',
-    filePath: 'backend/src/main/java/com/livingdocs/notification/ZaloOAService.java',
+    entityName: 'AuthService.java',
+    category: 'Authentication',
+    packagePath: 'com.livingdocs.service.AuthService',
+    filePath: 'backend/src/main/java/com/livingdocs/service/AuthService.java',
     docCoverage: '50%',
     statusBadge: 'Can bo sung',
     methods: [
       {
-        name: 'sendDriftAlertToZalo(String id, Alert a)',
-        signature: 'public void sendDriftAlertToZalo(String recipientId, DriftAlert alert)',
+        name: 'authenticateWithGitHub(String code)',
+        signature: 'public AuthResponse authenticateWithGitHub(String code)',
         status: 'DOCUMENTED',
-        docTitle: 'ZaloOA_Webhook_Notification.md',
-        description: 'Gui tin nhan thong bao canh bao Drift cap do Critical qua Zalo OA.'
+        docTitle: 'Authentication_OAuth2.md',
+        description: 'Xac thuc nguoi dung qua GitHub OAuth2 API va cap JWT Token.'
       },
       {
-        name: 'verifyZaloWebhookSignature(String signature)',
-        signature: 'public boolean verifyZaloWebhookSignature(String signature, String payload)',
+        name: 'refreshToken(String token)',
+        signature: 'public TokenResponse refreshToken(String token)',
         status: 'MISSING_DOC',
         docTitle: 'Chua co tai lieu',
-        description: 'Kiem tra chu ky bao mat HMAC-SHA256 tu Webhook cua Zalo.'
+        description: 'Cap lai access token moi tu refresh token hop le.'
       }
     ],
-    docContent: `# Huong Dan: Zalo Official Account Integration
+    docContent: `# Huong Dan: Authentication & GitHub OAuth2
 
-Gui canh bao khan cap den lap trinh vien khi he thong phat hien tai lieu bi sai lech nghiem trong.`
+Xac thuc nguoi dung va he thong qua OAuth2, phan quyen truy cap cho Staff, Manager va Developer.`
   }
 ];
 
@@ -276,8 +276,8 @@ export default function KnowledgeBasePage() {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-900">Kho Tri Thuc & Lien Ket Ma Nguon (Knowledge Base Viewer)</h1>
-            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-800 rounded font-semibold border border-slate-300">
-              Phan 5 - Frontend
+            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">
+              Kho dữ liệu
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -328,7 +328,7 @@ export default function KnowledgeBasePage() {
             <div className="flex items-center space-x-2">
               <span className="text-slate-500 font-semibold">Phan loai:</span>
               <div className="flex space-x-1">
-                {['ALL', 'Backend Controller', 'Payment Microservice', 'AI Engine Parser'].map((cat) => (
+                {['ALL', 'Backend Controller', 'GitHub Integration', 'AI Engine Parser', 'Authentication'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
@@ -512,7 +512,7 @@ export default function KnowledgeBasePage() {
         /* Tab 2: Danh sach va Mau Template tai lieu */
         <div className="space-y-4">
           <div className="bg-white p-4 rounded border border-slate-200 text-xs text-slate-600">
-            Cac bieu mau chuan hoa duoc giang vien yeu cau nhom tuan thu trong de tai LivingDocs, giup AI sinh tai lieu co he thong va thong nhat.
+            Các biểu mẫu tài liệu chuẩn hóa trong hệ thống LivingDocs, giúp định dạng tài liệu thống nhất và dễ tra cứu.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

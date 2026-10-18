@@ -75,7 +75,7 @@ export interface GovernancePolicy {
   autoUpdateOnPR: boolean;
   blockPRMergeOnCriticalDrift: boolean;
   minConfidenceThreshold: number;
-  autoAlertZaloOA: boolean;
+  autoAlertWebhook: boolean;
   requireStaffReview: boolean;
   snapshotBeforePublish: boolean;
 }
@@ -150,39 +150,39 @@ LivingDocs là hệ thống lưu trữ tài liệu đơn giản.
   },
   {
     id: 2,
-    title: 'PaymentGateway_VietQR.md - Đặc tả tích hợp VietQR',
-    category: 'Payment',
+    title: 'GitHub_Webhook_Guide.md - Đặc tả tích hợp GitHub Webhook',
+    category: 'GitHub Integration',
     repository: 'TruongThaiTienDat/Project-laptrinhjava',
     version: '1.2',
     status: 'APPROVED',
     driftType: 'Semantic',
     driftSeverity: 'Critical',
     confidenceScore: 0.98,
-    content: `# Tài Liệu Tích Hợp VietQR Gateway
+    content: `# Tài Liệu Tích Hợp GitHub Webhook
 
-## 1. Quy Trình Thanh Toán Tự Động
-- Khởi tạo mã QR động theo chuẩn Napas 247.
-- Tự động gán Transaction ID vào nội dung chuyển khoản.
-- Lắng nghe Webhook phản hồi từ VietQR API để kích hoạt gói dịch vụ.
+## 1. Quy Trình Nhận Sự Kiện Tự Động
+- Lắng nghe sự kiện Push và Pull Request từ GitHub Repository qua Webhook.
+- Tự động trích xuất commit hash, tác giả và danh sách tệp mã nguồn thay đổi.
+- Kích hoạt phân tích Drift Detection qua FastAPI AST Parser.
 
-## 2. Mã Trạng Thái Giao Dịch
-- PENDING: Đang chờ chuyển khoản
-- SUCCESS: Thanh toán thành công qua ngân hàng
-- EXPIRED: Mã QR hết hạn sau 15 phút`,
-    oldContent: `# Tài Liệu Tích Hợp VietQR Gateway
+## 2. Các Loại Sự Kiện Hỗ Trợ
+- push: Nhận diện commit mới trên nhánh chính
+- pull_request: Kích hoạt kiểm tra sai lệch tài liệu trước khi merge
+- ping: Kiểm tra kết nối webhook giữa GitHub và LivingDocs`,
+    oldContent: `# Tài Liệu Tích Hợp GitHub Webhook
 
-## 1. Quy Trình
-- Quét mã QR tĩnh thủ công.
-- Nhân viên kiểm tra sao kê bằng tay.`,
+## 1. Quy Trình Cũ
+- Kiểm tra commit thủ công bằng lệnh git fetch định kỳ.
+- Không hỗ trợ webhook thời gian thực.`,
     groundingEvidence: {
-      sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
-      codeEntity: 'public QRPaymentResponse generateDynamicVietQR(PaymentRequest req)',
+      sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
+      codeEntity: 'public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload)',
       commitHash: '9a31bc40e',
-      pullRequest: '#6 KAN-21: Tích hợp Napas VietQR động',
+      pullRequest: '#6 KAN-21: Xử lý sự kiện Push và Pull Request từ GitHub Webhook',
       diffSnippet: `@@ -12,4 +12,12 @@
-- public String getStaticQR() { return STATIC_QR; }
-+ public QRPaymentResponse generateDynamicVietQR(PaymentRequest req) {
-+     return napasClient.createDynamicQR(req.getAmount(), req.getTxnCode());
+- public void syncRepoManual() { ... }
++ public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload) {
++     return webhookService.processEvent(payload.getEvent(), payload.getCommits());
 + }`
     },
     lastModifiedBy: 'Staff Reviewer',
@@ -222,27 +222,27 @@ Phân tích regex đơn giản để tìm tên class.`,
   },
   {
     id: 4,
-    title: 'ZaloOA_Webhook_Notification.md - Hướng dẫn cấu hình thông báo Zalo',
-    category: 'Integration',
+    title: 'Authentication_OAuth2.md - Hướng dẫn xác thực GitHub OAuth2',
+    category: 'Authentication',
     repository: 'TruongThaiTienDat/Project-laptrinhjava',
     version: '0.9',
     status: 'DRAFT',
     driftType: 'Semantic',
     driftSeverity: 'Medium',
     confidenceScore: 0.88,
-    content: `# Cấu hình Zalo Official Account (Zalo OA)
+    content: `# Hướng Dẫn Xác Thực GitHub OAuth2
 
-Khi tài liệu bị phát hiện Documentation Drift cấp độ High hoặc Critical:
-- Hệ thống gửi tin nhắn thông báo tự động đến nhóm Kỹ thuật qua Zalo OA Webhook API.
-- Đính kèm đường link kiểm duyệt nhanh (Workflow Review URL).`,
+Khi người dùng hoặc hệ thống CI/CD truy cập LivingDocs:
+- Xác thực định danh người dùng thông qua GitHub OAuth2 API.
+- Cấp JWT Token kèm quyền hạn RBAC (Staff, Manager, Developer) để bảo vệ các endpoint.`,
     groundingEvidence: {
-      sourceFile: 'backend/src/main/java/com/livingdocs/notification/ZaloOAService.java',
-      codeEntity: 'public void sendDriftAlertToZalo(String recipientId, DriftAlert alert)',
+      sourceFile: 'backend/src/main/java/com/livingdocs/service/AuthService.java',
+      codeEntity: 'public AuthResponse authenticateWithGitHub(String code)',
       commitHash: 'e319fa0',
-      pullRequest: '#5 KAN-19: Zalo OA Integration',
+      pullRequest: '#5 KAN-19: Tích hợp đăng nhập GitHub OAuth2',
       diffSnippet: `@@ -0,0 +1,15 @@
-+ @PostMapping("/api/v1/webhook/zalo")
-+ public ResponseEntity<?> handleZaloWebhook(@RequestBody ZaloPayload payload)`
++ @PostMapping("/api/v1/auth/github")
++ public ResponseEntity<AuthResponse> loginWithGitHub(@RequestParam String code)`
     },
     lastModifiedBy: 'AI Engine',
     updatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString()
@@ -268,7 +268,7 @@ let mockChangeLogs: ChangeLogItem[] = [
     fromStatus: 'IN_REVIEW',
     toStatus: 'APPROVED',
     timestamp: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-    note: 'Staff xác nhận code VietQR trùng khớp với tài liệu Napas247, chuyển tiếp cho Manager duyệt xuất bản'
+    note: 'Staff xác nhận cấu hình GitHub Webhook trùng khớp với tài liệu kỹ thuật, chuyển tiếp cho Manager duyệt xuất bản'
   },
   {
     id: 3,
@@ -284,27 +284,27 @@ let mockChangeLogs: ChangeLogItem[] = [
 export const initialCoverageGaps: CoverageGapItem[] = [
   {
     id: 'gap-1',
-    service: 'Payment Microservice',
-    sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
-    entityName: 'checkTransactionStatus',
-    signature: 'public TxnStatus checkTransactionStatus(String txnCode)',
+    service: 'GitHub Integration',
+    sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
+    entityName: 'verifyWebhookSignature',
+    signature: 'public boolean verifyWebhookSignature(String signature, String payload)',
     type: 'METHOD',
     status: 'MISSING_DOC',
     priority: 'Critical',
     lastCommit: '9a31bc4',
-    suggestedDocTitle: 'PaymentGateway_VietQR.md - Tra cứu trạng thái giao dịch'
+    suggestedDocTitle: 'GitHub_Webhook_Guide.md - Xác thực chữ ký bí mật HMAC'
   },
   {
     id: 'gap-2',
-    service: 'Notification Integration',
-    sourceFile: 'backend/src/main/java/com/livingdocs/notification/ZaloOAService.java',
-    entityName: 'verifyZaloWebhookSignature',
-    signature: 'public boolean verifyZaloWebhookSignature(String signature, String payload)',
+    service: 'Authentication',
+    sourceFile: 'backend/src/main/java/com/livingdocs/service/AuthService.java',
+    entityName: 'refreshToken',
+    signature: 'public TokenResponse refreshToken(String refreshToken)',
     type: 'METHOD',
     status: 'MISSING_DOC',
     priority: 'High',
     lastCommit: 'e319fa0',
-    suggestedDocTitle: 'ZaloOA_Webhook_Notification.md - Xác thực chữ ký Webhook'
+    suggestedDocTitle: 'Authentication_OAuth2.md - Làm mới JWT token'
   },
   {
     id: 'gap-3',
@@ -325,16 +325,16 @@ let mockCoverageGaps: CoverageGapItem[] = [...initialCoverageGaps];
 export const initialImpactItems: ImpactAnalysisItem[] = [
   {
     id: 'impact-1',
-    sourceEntity: 'VietQRService.java',
-    sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
-    service: 'Payment Microservice',
+    sourceEntity: 'GitHubWebhookController.java',
+    sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
+    service: 'GitHub Integration',
     changeType: 'Semantic Drift',
     severity: 'Critical',
-    pullRequest: '#6 KAN-21: Chuyển đổi mã QR sang Napas 247 động',
-    affectedDocuments: ['PaymentGateway_VietQR.md', 'Architecture_Overview.md'],
-    cascadeServices: ['Redis Cache (:6379)', 'PostgreSQL DB (:5432)', 'Zalo OA Alert'],
+    pullRequest: '#6 KAN-21: Xử lý sự kiện Push và Pull Request từ GitHub Webhook',
+    affectedDocuments: ['GitHub_Webhook_Guide.md', 'Architecture_Overview.md'],
+    cascadeServices: ['Kafka Event Broker (:9092)', 'PostgreSQL DB (:5432)', 'AST Parser (:8000)'],
     riskScore: 92,
-    description: 'Thay đổi luồng xử lý từ mã QR tĩnh sang webhook nhận diện thanh toán tự động qua Napas 247. Sai lệch tài liệu có thể gây lỗi tích hợp cổng thanh toán.'
+    description: 'Thay đổi cấu trúc payload của webhook từ GitHub, cần cập nhật tài liệu để các service lắng nghe parse đúng JSON schema.'
   },
   {
     id: 'impact-2',
@@ -373,7 +373,7 @@ export const initialVersionMilestones: VersionMilestoneItem[] = [
     status: 'CURRENT',
     totalDocs: 4,
     releasedBy: 'Manager & Tech Lead',
-    notes: 'Phiên bản hoàn thiện quy trình kiểm duyệt 2 cấp, AST Parser và Napas 247 dynamic QR.'
+    notes: 'Phiên bản hoàn thiện quy trình kiểm duyệt 2 cấp, AST Parser và GitHub Webhook tự động.'
   },
   {
     version: '1.2',
@@ -381,7 +381,7 @@ export const initialVersionMilestones: VersionMilestoneItem[] = [
     status: 'STABLE',
     totalDocs: 3,
     releasedBy: 'Staff Reviewer',
-    notes: 'Hỗ trợ đặc tả cổng thanh toán VietQR tĩnh và tích hợp Redis Cache cho session.'
+    notes: 'Hỗ trợ đồng bộ GitHub repository cơ bản và tích hợp Redis Cache cho session.'
   },
   {
     version: '1.0',
@@ -399,7 +399,7 @@ export const initialGovernancePolicy: GovernancePolicy = {
   autoUpdateOnPR: true,
   blockPRMergeOnCriticalDrift: true,
   minConfidenceThreshold: 85,
-  autoAlertZaloOA: true,
+  autoAlertWebhook: true,
   requireStaffReview: true,
   snapshotBeforePublish: true
 };

@@ -4,8 +4,8 @@ import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: 'LivingDocs - AI-Assisted Self-Updating Document System',
-  description: 'Hệ thống tài liệu tự cập nhật với AI dành cho kỹ thuật phần mềm (ReactJS/Next.js)',
+  title: 'LivingDocs - Hệ thống quản lý tài liệu',
+  description: 'Hệ thống quản lý và cập nhật tài liệu kỹ thuật LivingDocs',
 };
 
 export default function RootLayout({

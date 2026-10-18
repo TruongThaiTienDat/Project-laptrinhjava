@@ -54,28 +54,28 @@ Tham số body:
   },
   {
     id: 'semantic',
-    title: 'Kịch bản 2: Semantic Drift (Thay đổi logic cổng thanh toán VietQR)',
+    title: 'Kịch bản 2: Semantic Drift (Thay đổi logic xử lý sự kiện GitHub Webhook)',
     type: 'Semantic' as const,
     severity: 'Critical' as const,
     confidence: 0.98,
-    sourceFile: 'backend/src/main/java/com/livingdocs/payment/VietQRService.java',
-    codeEntity: 'public VietQRPayment createDynamicPayment(OrderRequest order)',
+    sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
+    codeEntity: 'public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload)',
     commitHash: '9a31bc4',
-    pullRequest: '#6 KAN-21: Chuyển đổi mã QR tĩnh sang Napas 247 động',
+    pullRequest: '#6 KAN-21: Xử lý sự kiện Push và Pull Request từ GitHub Webhook',
     diffSnippet: `@@ -20,3 +20,10 @@
-- String qrCode = VietQRConfig.STATIC_IMAGE_URL;
-+ VietQRResponse res = napasApi.generateDynamicQR(order.getAmount(), order.getCode());
-+ redisCache.setEx("txn:" + order.getCode(), 900, "PENDING");`,
-    oldContent: `# Quy Trình Thanh Toán VietQR
+- syncService.checkRepoManual();
++ EventResponse res = webhookProcessor.handleEvent(payload.getEvent(), payload.getCommits());
++ redisCache.setEx("event:" + payload.getDeliveryId(), 900, "PROCESSED");`,
+    oldContent: `# Quy Trình Đồng Bộ GitHub Webhook (Cũ)
 
-1. Hiển thị hình ảnh mã QR ngân hàng cố định.
-2. Người dùng chuyển khoản và tự điền mã đơn hàng vào nội dung.
-3. Kế toán tra soát sao kê ngân hàng mỗi ngày và duyệt thủ công.`,
-    newContent: `# Quy Trình Thanh Toán VietQR (Tự Động Napas 247)
+1. Kiểm tra commit định kỳ bằng cronjob thủ công.
+2. Không nhận diện được sự kiện Pull Request thời gian thực.
+3. Người dùng phải ấn nút đồng bộ tài liệu bằng tay.`,
+    newContent: `# Quy Trình Đồng Bộ GitHub Webhook (Tự Động Thời Gian Thực)
 
-1. Sinh mã QR động Napas 247 chứa chính xác số tiền và mã hóa đơn.
-2. Lưu vết giao dịch vào Redis Cache với thời gian sống 15 phút.
-3. Nhận Webhook xác nhận tức thì từ ngân hàng, tự động kích hoạt tài khoản.`
+1. Lắng nghe Webhook Push và Pull Request từ GitHub Repository.
+2. Lưu vết delivery ID vào Redis Cache để chống trùng lặp sự kiện (Idempotency).
+3. Tự động kích hoạt phân tích Drift Detection qua FastAPI AST Parser ngay khi có commit mới.`
   },
   {
     id: 'referential',
@@ -113,8 +113,8 @@ export default function DiffViewPage() {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-900">Bộ So Sánh Sai Lệch Tài Liệu (Diff View Component)</h1>
-            <span className="px-2 py-0.5 text-xs bg-sky-100 text-sky-800 rounded font-semibold border border-sky-200">
-              Phần 5: Core Component
+            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">
+              So sánh tài liệu
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
