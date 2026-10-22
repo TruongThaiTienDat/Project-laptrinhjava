@@ -1,3 +1,4 @@
+
 package com.livingdocs.repository;
 
 import com.livingdocs.model.ERole;
@@ -11,4 +12,3 @@ import java.util.Optional;
 public interface RoleRepository extends JpaRepository<Role, Integer> {
     Optional<Role> findByName(ERole name);
 }
-
