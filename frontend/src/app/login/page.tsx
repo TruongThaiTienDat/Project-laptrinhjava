@@ -9,9 +9,9 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useLivingDocs();
 
-  // Mặc định chọn tài khoản Staff Reviewer
+  // Mặc định chọn tài khoản Staff Reviewer (Nguyễn Thành Đồng)
   const [selectedAccountId, setSelectedAccountId] = useState<string>('user-staff');
-  const [email, setEmail] = useState<string>('staff@livingdocs.vn');
+  const [email, setEmail] = useState<string>('dong.nguyen@livingdocs.vn');
   const [password, setPassword] = useState<string>('12345678');
   const [selectedRole, setSelectedRole] = useState<UserRole>('Staff');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -37,9 +37,16 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMsg('');
 
-    // Tìm tài khoản khớp trong danh sách mẫu, nếu không có thì tạo tài khoản kiểm thử theo dữ liệu nhập
+    // Khớp tài khoản theo email, tên hoặc role alias
     const matched = sampleAccounts.find(
-      acc => acc.email.toLowerCase() === email.trim().toLowerCase()
+      acc => acc.email.toLowerCase() === email.trim().toLowerCase() ||
+             acc.name.toLowerCase() === email.trim().toLowerCase() ||
+             acc.id === email.trim().toLowerCase() ||
+             (email.toLowerCase().includes('dev') && acc.role === 'Developer') ||
+             (email.toLowerCase().includes('staff') && acc.role === 'Staff') ||
+             (email.toLowerCase().includes('manager') && acc.role === 'Manager') ||
+             (email.toLowerCase().includes('lead') && acc.role === 'Technical Lead') ||
+             (email.toLowerCase().includes('admin') && acc.role === 'Administrator')
     );
 
     const userToLogin: AuthUser = matched || {
@@ -48,12 +55,12 @@ export default function LoginPage() {
       email: email.includes('@') ? email : `${email}@livingdocs.vn`,
       role: selectedRole,
       avatarLetter: (email[0] || 'U').toUpperCase(),
-      roleDescription: `Vai trò ${selectedRole}`
+      roleDescription: selectedRole
     };
 
     setTimeout(() => {
       login(userToLogin);
-      router.push('/');
+      router.replace('/');
     }, 200);
   };
 
@@ -71,7 +78,7 @@ export default function LoginPage() {
 
     setTimeout(() => {
       login(oauthUser);
-      router.push('/');
+      router.replace('/');
     }, 250);
   };
 
@@ -145,14 +152,22 @@ export default function LoginPage() {
                 </label>
                 <select
                   value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded text-slate-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition font-medium"
+                  onChange={(e) => {
+                    const newRole = e.target.value as UserRole;
+                    setSelectedRole(newRole);
+                    const matched = sampleAccounts.find(acc => acc.role === newRole);
+                    if (matched) {
+                      setSelectedAccountId(matched.id);
+                      setEmail(matched.email);
+                    }
+                  }}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded text-slate-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition font-medium cursor-pointer"
                 >
-                  <option value="Developer">Developer - Lập trình viên (Tạo & gửi duyệt)</option>
-                  <option value="Staff">Staff Reviewer - Chuyên viên xét duyệt (Duyệt bước 1)</option>
-                  <option value="Manager">Manager Approver - Quản lý phê duyệt (Phê duyệt & xuất bản)</option>
-                  <option value="Technical Lead">Technical Lead - Trưởng nhóm kỹ thuật</option>
-                  <option value="Administrator">Administrator - Quản trị viên hệ thống</option>
+                  <option value="Developer">Developer</option>
+                  <option value="Staff">Staff Reviewer</option>
+                  <option value="Manager">Manager Approver</option>
+                  <option value="Technical Lead">Technical Lead</option>
+                  <option value="Administrator">Administrator</option>
                 </select>
               </div>
 
@@ -206,26 +221,26 @@ export default function LoginPage() {
             </div>
 
             {/* Danh sách 5 tài khoản mẫu */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {sampleAccounts.map((account) => {
                 const isSelected = selectedAccountId === account.id;
                 return (
                   <div
                     key={account.id}
                     onClick={() => handleSelectAccount(account)}
-                    className={`p-2.5 rounded-lg border cursor-pointer transition text-xs flex items-center justify-between gap-2.5 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition text-xs flex items-center justify-between gap-2.5 ${
                       isSelected
                         ? 'border-blue-500 bg-white ring-1 ring-blue-500 shadow-sm'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <div className="flex items-start space-x-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xs shrink-0">
                         {account.avatarLetter}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center space-x-2 flex-wrap gap-y-0.5">
-                          <span className="font-semibold text-slate-900 truncate">
+                          <span className="font-semibold text-slate-900 text-xs truncate">
                             {account.name}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.2 rounded border font-medium inline-block ml-1 ${
@@ -239,20 +254,17 @@ export default function LoginPage() {
                               ? 'bg-purple-50 text-purple-700 border-purple-200'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}>
-                            {account.role}
+                            {account.role === 'Staff' ? 'Staff Reviewer' : account.role === 'Manager' ? 'Manager Approver' : account.role}
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
                           {account.email}
                         </div>
-                        <div className="text-[11px] text-slate-600 mt-0.5">
-                          {account.roleDescription}
-                        </div>
                       </div>
                     </div>
 
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 ml-1">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 ml-1 shadow-2xs">
                         <Check className="w-3 h-3" />
                       </div>
                     )}

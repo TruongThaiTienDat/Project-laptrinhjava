@@ -81,7 +81,7 @@ export default function KnowledgeBasePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       {/* Tiêu đề trang - Không bọc Card, nằm trực tiếp trên nền */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

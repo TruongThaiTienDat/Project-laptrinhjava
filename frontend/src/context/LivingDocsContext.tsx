@@ -27,39 +27,39 @@ export interface AuthUser {
   roleDescription: string;
 }
 
-// Danh sách tài khoản mẫu phục vụ kiểm thử phân quyền
+// Danh sách tài khoản mẫu phục vụ kiểm thử phân quyền RBAC
 export const sampleAccounts: AuthUser[] = [
   {
     id: 'user-dev',
-    name: 'Trần Minh Quân',
-    email: 'dev@livingdocs.vn',
+    name: 'Phạm Minh Toàn',
+    email: 'toan.pham@livingdocs.vn',
     role: 'Developer',
-    avatarLetter: 'Q',
-    roleDescription: 'Quyền tạo tài liệu, gửi duyệt'
+    avatarLetter: 'T',
+    roleDescription: 'Developer'
   },
   {
     id: 'user-staff',
-    name: 'Nguyễn Văn A',
-    email: 'staff@livingdocs.vn',
+    name: 'Nguyễn Thành Đồng',
+    email: 'dong.nguyen@livingdocs.vn',
     role: 'Staff',
-    avatarLetter: 'A',
-    roleDescription: 'Quyền kiểm tra và duyệt bước 1'
+    avatarLetter: 'Đ',
+    roleDescription: 'Staff Reviewer'
   },
   {
     id: 'user-manager',
-    name: 'Lê Hoàng Nam',
-    email: 'manager@livingdocs.vn',
+    name: 'Phạm Thị Thúy Kiều',
+    email: 'kieu.pham@livingdocs.vn',
     role: 'Manager',
-    avatarLetter: 'N',
-    roleDescription: 'Quyền phê duyệt cuối cùng và xuất bản'
+    avatarLetter: 'K',
+    roleDescription: 'Manager Approver'
   },
   {
     id: 'user-lead',
-    name: 'Phạm Quốc Bảo',
-    email: 'lead@livingdocs.vn',
+    name: 'Lê Thị Thanh Tuyền',
+    email: 'tuyen.le@livingdocs.vn',
     role: 'Technical Lead',
-    avatarLetter: 'B',
-    roleDescription: 'Quyền xem thống kê và quản trị cấu hình'
+    avatarLetter: 'T',
+    roleDescription: 'Technical Lead'
   },
   {
     id: 'user-admin',
@@ -67,7 +67,7 @@ export const sampleAccounts: AuthUser[] = [
     email: 'admin@livingdocs.vn',
     role: 'Administrator',
     avatarLetter: 'Đ',
-    roleDescription: 'Toàn quyền quản trị hệ thống'
+    roleDescription: 'Administrator'
   }
 ];
 
@@ -230,6 +230,136 @@ Khi người dùng hoặc hệ thống CI/CD truy cập LivingDocs:
     },
     lastModifiedBy: 'AI Engine',
     updatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  },
+  {
+    id: 5,
+    title: 'RAG_Vector_Retriever.md - Truy hồi ngữ nghĩa và Embeddings',
+    category: 'AI Engine',
+    repository: 'TruongThaiTienDat/Project-laptrinhjava',
+    version: '1.4',
+    status: 'IN_REVIEW',
+    driftType: 'Semantic',
+    driftSeverity: 'High',
+    confidenceScore: 0.95,
+    content: `# Module RAG & Vector Retriever (ChromaDB & Qdrant)
+
+Hệ thống truy hồi tăng cường (Retrieval-Augmented Generation):
+- Tự động chia nhỏ (Chunking) tài liệu kỹ thuật và mã nguồn Java/Python thành các đoạn vector 512 dimensions.
+- Sử dụng mô hình Text-Embedding-3-Large để đánh chỉ mục vector.
+- Truy vấn tài liệu ngữ nghĩa tương đồng (Cosine Similarity > 0.82) để phát hiện sai lệch ngữ nghĩa.`,
+    oldContent: `# Vector Retriever
+Sử dụng tìm kiếm từ khóa SQL LIKE đơn giản.`,
+    groundingEvidence: {
+      sourceFile: 'ai-engine/app/retriever/vector_store.py',
+      codeEntity: 'def query_relevant_chunks(query: str, top_k: int = 5) -> List[Chunk]',
+      commitHash: '8b41ca9',
+      pullRequest: '#8 KAN-23: Nâng cấp ChromaDB Vector Indexing',
+      diffSnippet: `@@ -15,3 +15,12 @@
++ def query_relevant_chunks(query: str, top_k: int = 5) -> List[Chunk]:
++     return vector_store.similarity_search(query, k=top_k)`
+    },
+    lastModifiedBy: 'AI Engine',
+    updatedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString()
+  },
+  {
+    id: 6,
+    title: 'Kafka_Event_Consumer.md - Xử lý hàng đợi sự kiện Kafka & DLQ',
+    category: 'Message Broker',
+    repository: 'TruongThaiTienDat/Project-laptrinhjava',
+    version: '1.1',
+    status: 'APPROVED',
+    driftType: 'Signature',
+    driftSeverity: 'Critical',
+    confidenceScore: 0.97,
+    content: `# Xử Lý Sự Kiện Kafka Event-Driven & Dead Letter Queue
+
+Đặc tả luồng xử lý tin nhắn bất đồng bộ:
+- Topic livingdocs.code-drift: Lắng nghe sự kiện mã nguồn thay đổi từ Webhook.
+- Topic livingdocs.doc-approved: Thông báo khi Manager xuất bản phiên bản mới.
+- Hàng đợi Dead Letter Queue (DLQ livingdocs.drift.dlq) tự động cô lập các payload JSON lỗi cú pháp để tránh nghẽn luồng.`,
+    oldContent: `# Xử Lý Sự Kiện
+Sử dụng RabbitMQ truyền tin nhắn đồng bộ.`,
+    groundingEvidence: {
+      sourceFile: 'backend/src/main/java/com/livingdocs/consumer/KafkaEventConsumer.java',
+      codeEntity: 'public void handleCodeDriftEvent(@Payload DriftEvent event, Acknowledgment ack)',
+      commitHash: 'd2149e8',
+      pullRequest: '#11 KAN-27: Tích hợp Kafka Consumer & DLQ Retry Mechanism',
+      diffSnippet: `@@ -20,6 +20,14 @@
++ @KafkaListener(topics = "livingdocs.code-drift", groupId = "livingdocs-core")
++ public void handleCodeDriftEvent(@Payload DriftEvent event, Acknowledgment ack) {
++     driftProcessor.process(event);
++     ack.acknowledge();
++ }`
+    },
+    lastModifiedBy: 'Technical Lead',
+    updatedAt: new Date(Date.now() - 55 * 60 * 1000).toISOString()
+  },
+  {
+    id: 7,
+    title: 'RBAC_Policy_Service.md - Đặc tả ma trận phân quyền 5 cấp',
+    category: 'Security & RBAC',
+    repository: 'TruongThaiTienDat/Project-laptrinhjava',
+    version: '2.1',
+    status: 'PUBLISHED',
+    driftType: 'Referential',
+    driftSeverity: 'Low',
+    confidenceScore: 0.99,
+    content: `# Ma Trận Phân Quyền Vai Trò (Role-Based Access Control)
+
+Hệ thống phân cấp 5 vai trò theo quy chuẩn Enterprise:
+1. Developer: Nộp tài liệu mới (Submit DRAFT -> IN_REVIEW), sửa lỗi tài liệu bị từ chối.
+2. Staff Reviewer: Kiểm tra tính xác thực mã nguồn, duyệt bước 1 (IN_REVIEW -> APPROVED) hoặc từ chối.
+3. Manager Approver: Quyền phê duyệt tối cao và xuất bản (APPROVED -> PUBLISHED).
+4. Technical Lead: Giám sát chỉ số kiến trúc, quản trị chính sách CI/CD và thực hiện Rollback.
+5. Administrator: Toàn quyền quản trị hệ sinh thái người dùng và hạ tầng Microservices.`,
+    oldContent: `# Phân Quyền
+Chỉ có vai trò Admin và User thông thường.`,
+    groundingEvidence: {
+      sourceFile: 'backend/src/main/java/com/livingdocs/service/RbacPolicyService.java',
+      codeEntity: 'public boolean evaluateAccess(User user, DocumentAction action, Document doc)',
+      commitHash: '3a110e5',
+      pullRequest: '#14 KAN-30: Hoàn thành Service ma trận phân quyền RBAC',
+      diffSnippet: `@@ -30,4 +30,12 @@
++ public boolean evaluateAccess(User user, DocumentAction action, Document doc) {
++     return rbacMatrix.get(user.getRole()).contains(action);
++ }`
+    },
+    lastModifiedBy: 'Manager Approver',
+    updatedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
+  },
+  {
+    id: 8,
+    title: 'Audit_Logger_Compliance.md - Ghi nhật ký kiểm toán và tuân thủ',
+    category: 'Audit & Governance',
+    repository: 'TruongThaiTienDat/Project-laptrinhjava',
+    version: '1.0',
+    status: 'IN_REVIEW',
+    driftType: 'Signature',
+    driftSeverity: 'Medium',
+    confidenceScore: 0.93,
+    content: `# Tiêu Chuẩn Ghi Nhật Ký Kiểm Toán (Audit Logging & Compliance)
+
+Mọi biến động trạng thái trên tài liệu bắt buộc phải sinh Audit Record bất biến:
+- Ghi nhận định danh người thực hiện (User ID, Role, IP Address).
+- Trạng thái trước (fromStatus) và trạng thái sau (toStatus).
+- Lý do phê duyệt hoặc từ chối kèm thời gian chính xác dạng ISO 8601.
+- Hash chữ ký số đảm bảo dữ liệu lịch sử không bị can thiệp trái phép.`,
+    oldContent: `# Ghi Log
+Ghi log ra tệp text đơn giản bằng log4j.`,
+    groundingEvidence: {
+      sourceFile: 'backend/src/main/java/com/livingdocs/aspect/AuditLogAspect.java',
+      codeEntity: 'public Object logWorkflowTransition(ProceedingJoinPoint pjp, WorkflowTransition wt)',
+      commitHash: '6f7881c',
+      pullRequest: '#16 KAN-32: AOP Aspect tự động ghi Audit Log chuyển trạng thái',
+      diffSnippet: `@@ -18,5 +18,16 @@
++ @Around("@annotation(wt)")
++ public Object logWorkflowTransition(ProceedingJoinPoint pjp, WorkflowTransition wt) throws Throwable {
++     auditRepository.save(AuditRecord.from(wt, pjp.getArgs()));
++     return pjp.proceed();
++ }`
+    },
+    lastModifiedBy: 'AI Engine',
+    updatedAt: new Date(Date.now() - 18 * 60 * 1000).toISOString()
   }
 ];
 
@@ -457,6 +587,8 @@ interface LivingDocsContextType {
   // Quản lý người dùng & phân quyền RBAC
   currentUser: AuthUser;
   role: UserRole;
+  isAuthenticated: boolean;
+  isLoaded: boolean;
   setRole: (role: UserRole) => void;
   setCurrentUser: (user: AuthUser) => void;
   login: (user: AuthUser) => void;
@@ -499,7 +631,8 @@ const STORAGE_KEY = 'livingdocs_state_dynamic_v3';
 export function LivingDocsProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Mặc định tài khoản ban đầu là Staff Reviewer (Nguyễn Văn A)
+  // Trạng thái xác thực & người dùng
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUserState] = useState<AuthUser>(sampleAccounts[1]);
   const [documents, setDocuments] = useState<DocumentItem[]>(defaultMockDocuments);
   const [changeLogs, setChangeLogs] = useState<ChangeLogItem[]>(defaultMockLogs);
@@ -519,8 +652,11 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.currentUser) {
+        if (parsed.isAuthenticated === true && parsed.currentUser) {
+          setIsAuthenticated(true);
           setCurrentUserState(parsed.currentUser);
+        } else {
+          setIsAuthenticated(false);
         }
         if (parsed.documents) setDocuments(parsed.documents);
         if (parsed.changeLogs) setChangeLogs(parsed.changeLogs);
@@ -529,9 +665,12 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
         if (parsed.policy) setPolicy(parsed.policy);
         if (parsed.milestones) setMilestones(parsed.milestones);
         if (parsed.entities) setEntities(parsed.entities);
+      } else {
+        setIsAuthenticated(false);
       }
     } catch (e) {
       console.error('Không thể đọc dữ liệu từ localStorage:', e);
+      setIsAuthenticated(false);
     } finally {
       setIsLoaded(true);
     }
@@ -542,6 +681,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     if (!isLoaded) return;
     try {
       const stateToSave = {
+        isAuthenticated,
         currentUser,
         documents,
         changeLogs,
@@ -555,7 +695,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     } catch (e) {
       console.error('Không thể lưu dữ liệu vào localStorage:', e);
     }
-  }, [currentUser, documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
+  }, [isAuthenticated, currentUser, documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
 
   // Đổi role trực tiếp từ Header -> tự động khớp với tài khoản mẫu tương ứng
   const setRole = (newRole: UserRole) => {
@@ -578,15 +718,31 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
   // Đăng nhập
   const login = (user: AuthUser) => {
     setCurrentUserState(user);
+    setIsAuthenticated(true);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const stateObj = saved ? JSON.parse(saved) : {};
+      stateObj.isAuthenticated = true;
+      stateObj.currentUser = user;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  // Đăng xuất: đặt về Guest hoặc Developer và điều hướng về /login
+  // Đăng xuất: xóa session đăng nhập và điều hướng bắt buộc về /login
   const logout = () => {
-    setCurrentUserState(sampleAccounts[0]); // Đặt tạm về tài khoản dev
+    setIsAuthenticated(false);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        parsed.isAuthenticated = false;
+        delete parsed.currentUser;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
     } catch {}
-    router.push('/login');
+    router.replace('/login');
   };
 
   // Thêm tài liệu mới
@@ -793,6 +949,8 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       value={{
         currentUser,
         role: currentUser.role,
+        isAuthenticated,
+        isLoaded,
         setRole,
         setCurrentUser,
         login,

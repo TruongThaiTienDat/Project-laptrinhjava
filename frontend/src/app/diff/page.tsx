@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { useLivingDocs } from '@/context/LivingDocsContext';
 import { DiffViewer } from '@/components/DiffViewer';
-import { Sliders, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Sliders, CheckCircle2, RotateCcw, Upload, Trash2 } from 'lucide-react';
 
 export default function DiffViewPage() {
-  const { documents, setIsTestModalOpen } = useLivingDocs();
+  const { documents, deleteDocument, setIsTestModalOpen } = useLivingDocs();
 
   const [selectedDocId, setSelectedDocId] = useState<number>(documents[0]?.id || 1);
   const [customMode, setCustomMode] = useState<boolean>(false);
@@ -31,13 +31,24 @@ export default function DiffViewPage() {
   const currentDoc = documents.find(d => d.id === selectedDocId) || documents[0];
 
   return (
-    <div className="space-y-6">
-      {/* Tiêu đề trang - Không bọc Card, nằm trực tiếp trên nền */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">So sánh thay đổi (Diff View)</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Trực quan hóa sự khác biệt giữa tài liệu hiện hành và bản cập nhật đề xuất, đính kèm bằng chứng Grounding Evidence từ mã nguồn.
-        </p>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Tiêu đề trang & Nút tải tài liệu lên */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">So sánh thay đổi (Diff View)</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Trực quan hóa sự khác biệt giữa tài liệu hiện hành và bản cập nhật đề xuất, đính kèm bằng chứng Grounding Evidence từ mã nguồn.
+          </p>
+        </div>
+
+        {/* Nút bấm tải tài liệu lên nổi bật màu blue-600 */}
+        <button
+          onClick={() => setIsTestModalOpen(true)}
+          className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Tải tài liệu lên / Tạo bản kiểm tra</span>
+        </button>
       </div>
 
       {/* Thông báo thao tác */}
@@ -105,6 +116,22 @@ export default function DiffViewPage() {
           >
             + Quản lý toàn bộ tài liệu test
           </button>
+
+          {!customMode && currentDoc && (
+            <button
+              onClick={() => {
+                if (confirm(`Bạn có chắc muốn xóa tài liệu "${currentDoc.title.split(' - ')[0]}"?`)) {
+                  deleteDocument(currentDoc.id);
+                  showNotify(`Đã xóa tài liệu "${currentDoc.title.split(' - ')[0]}".`);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition flex items-center space-x-1"
+              title="Xóa tài liệu kiểm thử này khỏi hệ thống"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa tài liệu</span>
+            </button>
+          )}
         </div>
       </div>
 

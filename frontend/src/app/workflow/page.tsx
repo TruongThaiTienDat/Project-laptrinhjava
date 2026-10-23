@@ -16,7 +16,9 @@ import {
   CheckCircle2, 
   AlertCircle,
   History,
-  RotateCcw
+  RotateCcw,
+  Upload,
+  Trash2
 } from 'lucide-react';
 
 export default function WorkflowReviewPage() {
@@ -28,7 +30,9 @@ export default function WorkflowReviewPage() {
     staffApprove, 
     managerPublish, 
     rejectDocument,
-    rollbackDocument
+    rollbackDocument,
+    deleteDocument,
+    setIsTestModalOpen
   } = useLivingDocs();
 
   const [selectedDocId, setSelectedDocId] = useState<number>(documents[0]?.id || 1);
@@ -109,13 +113,24 @@ export default function WorkflowReviewPage() {
   const relevantLogs = changeLogs.filter(l => l.documentId === selectedDocId);
 
   return (
-    <div className="space-y-6">
-      {/* Tiêu đề trang - Không bọc Card, nằm trực tiếp trên nền */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Xét duyệt tài liệu (Workflow)</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Quy trình kiểm duyệt tài liệu 2 cấp: Developer nộp tài liệu ➔ Staff kiểm tra kỹ thuật ➔ Manager phê duyệt xuất bản.
-        </p>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Tiêu đề trang & Nút tải tài liệu lên */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Xét duyệt tài liệu (Workflow)</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Quy trình kiểm duyệt tài liệu 2 cấp: Developer nộp tài liệu ➔ Staff kiểm tra kỹ thuật ➔ Manager phê duyệt xuất bản.
+          </p>
+        </div>
+
+        {/* Nút bấm tải tài liệu lên nổi bật màu blue-600 */}
+        <button
+          onClick={() => setIsTestModalOpen(true)}
+          className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Tải tài liệu lên / Tạo bản kiểm tra</span>
+        </button>
       </div>
 
       {/* Thông báo thao tác */}
@@ -411,6 +426,21 @@ export default function WorkflowReviewPage() {
                         </div>
                       )
                     )}
+
+                    {/* Nút xóa tài liệu kiểm thử */}
+                    <button
+                      onClick={() => {
+                        if (confirm(`Bạn có chắc muốn xóa tài liệu "${selectedDoc.title.split(' - ')[0]}"?`)) {
+                          deleteDocument(selectedDoc.id);
+                          showNotify(`Đã xóa tài liệu "${selectedDoc.title.split(' - ')[0]}".`);
+                        }
+                      }}
+                      className="px-2.5 py-1.5 rounded border border-slate-300 text-slate-600 hover:text-rose-600 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1 transition"
+                      title="Xóa tài liệu kiểm thử này khỏi hệ thống"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa</span>
+                    </button>
                   </div>
                 </div>
 
