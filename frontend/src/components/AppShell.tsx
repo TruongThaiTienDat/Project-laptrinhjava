@@ -45,13 +45,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Khi đang ở trang đăng nhập /login: ẩn Sidebar và Header, căn giữa toàn màn hình
+  // Khi đang ở trang đăng nhập /login: ẩn Sidebar và Header, nhường quyền kiểm soát toàn màn hình cho trang /login
   if (isLoginPage) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-fadeIn">
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   // Giao diện chính sau khi người dùng đã đăng nhập hợp lệ
