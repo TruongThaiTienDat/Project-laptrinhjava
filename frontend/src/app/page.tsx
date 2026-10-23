@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { 
-  workflowApi, 
-  DocumentItem 
-} from '@/services/api';
+import { useLivingDocs } from '@/context/LivingDocsContext';
 import { 
   FileText, 
   Clock, 
@@ -13,54 +10,20 @@ import {
   Sparkles,
   ArrowRight
 } from 'lucide-react';
+import { StatusBadge, SeverityBadge } from '@/components/StatusBadge';
 
 export default function HomePage() {
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const { documents } = useLivingDocs();
 
-  useEffect(() => {
-    workflowApi.getDocuments().then(docs => setDocuments(docs));
-  }, []);
-
-  // Hàm chuyển đổi trạng thái sang tiếng Việt
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return { label: 'Bản nháp', className: 'bg-slate-100 text-slate-700' };
-      case 'IN_REVIEW':
-        return { label: 'Chờ duyệt', className: 'bg-amber-100 text-amber-800' };
-      case 'APPROVED':
-        return { label: 'Đã duyệt', className: 'bg-blue-100 text-blue-800' };
-      case 'PUBLISHED':
-        return { label: 'Đã xuất bản', className: 'bg-emerald-100 text-emerald-800' };
-      case 'REJECTED':
-        return { label: 'Bị từ chối', className: 'bg-red-100 text-red-800' };
-      default:
-        return { label: status, className: 'bg-slate-100 text-slate-700' };
-    }
-  };
-
-  // Hàm hiển thị mức độ lệch
-  const getDriftSeverityBadge = (severity?: string) => {
-    switch (severity) {
-      case 'Critical':
-        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Critical</span>;
-      case 'High':
-        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">High</span>;
-      case 'Medium':
-        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Medium</span>;
-      case 'Low':
-        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">Low</span>;
-      default:
-        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">None</span>;
-    }
-  };
+  const inReviewCount = documents.filter(d => d.status === 'IN_REVIEW').length;
+  const approvedCount = documents.filter(d => d.status === 'APPROVED' || d.status === 'PUBLISHED').length;
 
   return (
     <div className="space-y-6">
-      {/* Tiêu đề trang */}
+      {/* Tiêu đề trang - Không bọc Card, nằm trực tiếp trên nền */}
       <div>
-        <h1 className="text-xl font-bold text-slate-800">Tổng quan hệ thống</h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <h1 className="text-2xl font-semibold text-slate-900">Tổng quan hệ thống</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Theo dõi số lượng tài liệu kỹ thuật và các thay đổi mã nguồn gần đây.
         </p>
       </div>
@@ -68,37 +31,37 @@ export default function HomePage() {
       {/* 4 ô thống kê số liệu tiêu chuẩn */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Ô 1: Tổng số tài liệu */}
-        <div className="bg-white p-4 rounded border border-slate-200">
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Tổng số tài liệu</span>
             <FileText className="w-4 h-4 text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-800">4</div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">{documents.length}</div>
           <div className="text-xs text-slate-500 mt-1">Đang hoạt động</div>
         </div>
 
         {/* Ô 2: Chờ duyệt */}
-        <div className="bg-white p-4 rounded border border-slate-200">
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Chờ duyệt</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-800">1</div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">{inReviewCount}</div>
           <div className="text-xs text-amber-600 mt-1">Cần kiểm tra</div>
         </div>
 
         {/* Ô 3: Đã duyệt */}
-        <div className="bg-white p-4 rounded border border-slate-200">
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Đã duyệt</span>
             <CheckCircle className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-800">1</div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">{approvedCount}</div>
           <div className="text-xs text-blue-600 mt-1">Sẵn sàng xuất bản</div>
         </div>
 
         {/* Ô 4: Tự động hóa */}
-        <div className="bg-white p-4 rounded border border-slate-200">
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Tự động hóa</span>
             <Sparkles className="w-4 h-4 text-emerald-500" />
@@ -109,11 +72,14 @@ export default function HomePage() {
       </div>
 
       {/* Bảng dữ liệu: Danh sách tài liệu cập nhật gần đây */}
-      <div className="bg-white rounded border border-slate-200">
-        <div className="p-4 border-b border-slate-200">
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-800">
             Danh sách tài liệu cập nhật gần đây
           </h2>
+          <span className="text-xs text-slate-400 font-mono">
+            {documents.length} tài liệu
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -130,7 +96,6 @@ export default function HomePage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {documents.map((doc) => {
-                const statusInfo = getStatusText(doc.status);
                 const codeFile = doc.groundingEvidence?.sourceFile || 'Chưa liên kết';
                 const prCommit = doc.groundingEvidence?.pullRequest 
                   ? `${doc.groundingEvidence.pullRequest.split(':')[0]} - ${doc.groundingEvidence.commitHash.slice(0, 7)}`
@@ -149,12 +114,10 @@ export default function HomePage() {
                       {prCommit}
                     </td>
                     <td className="py-3 px-4">
-                      {getDriftSeverityBadge(doc.driftSeverity)}
+                      <SeverityBadge severity={doc.driftSeverity} />
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusInfo.className}`}>
-                        {statusInfo.label}
-                      </span>
+                      <StatusBadge status={doc.status} />
                     </td>
                     <td className="py-3 px-4 text-right">
                       <Link

@@ -1,392 +1,237 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLivingDocs } from '@/context/LivingDocsContext';
 import { DiffViewer } from '@/components/DiffViewer';
-import { workflowApi, DocumentItem } from '@/services/api';
-import { 
-  GitCompare, 
-  Sparkles, 
-  Sliders, 
-  RefreshCw, 
-  Check, 
-  Layers, 
-  Code2, 
-  FileCheck,
-  FileText,
-  History,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-
-const presetScenarios = [
-  {
-    id: 'signature',
-    title: 'Kịch bản 1: Signature Drift (Thay đổi tham số & Endpoint REST)',
-    type: 'Signature' as const,
-    severity: 'High' as const,
-    confidence: 0.96,
-    sourceFile: 'backend/src/main/java/com/livingdocs/controller/WorkflowController.java',
-    codeEntity: 'public ResponseEntity<DocResponse> updateStatus(@PathVariable Long id, @RequestBody StatusUpdateReq req)',
-    commitHash: 'f5db245',
-    pullRequest: '#4 KAN-17: Hoàn thành API xét duyệt tài liệu',
-    diffSnippet: `@@ -15,4 +15,6 @@
-- @PutMapping("/api/workflow/{id}")
-+ @PutMapping("/api/workflow/{id}/staff-approve")
-+ @PutMapping("/api/workflow/{id}/manager-publish")
-+ @PutMapping("/api/workflow/{id}/reject")`,
-    oldContent: `# Hướng Dẫn Gọi API Workflow (Cũ)
-
-Hệ thống chỉ hỗ trợ 1 endpoint cập nhật duy nhất:
-- PUT /api/workflow/{id}: Gửi cập nhật trạng thái chung.
-
-Tham số body:
-{
-  "status": "APPROVED"
-}`,
-    newContent: `# Hướng Dẫn Gọi API Workflow (Mới - Tự Động Cập Nhật)
-
-Hệ thống đã tách thành quy trình kiểm duyệt 2 cấp:
-- PUT /api/workflow/{id}/submit: Gửi tài liệu vào hàng đợi
-- PUT /api/workflow/{id}/staff-approve: Quyền Staff kiểm duyệt
-- PUT /api/workflow/{id}/manager-publish: Quyền Manager xuất bản chính thức
-- PUT /api/workflow/{id}/reject: Từ chối tài liệu và hoàn trả tác giả
-
-Tham số body:
-{
-  "role": "Staff",
-  "reason": "Ghi chú kiểm duyệt nếu từ chối"
-}`
-  },
-  {
-    id: 'semantic',
-    title: 'Kịch bản 2: Semantic Drift (Thay đổi logic xử lý sự kiện GitHub Webhook)',
-    type: 'Semantic' as const,
-    severity: 'Critical' as const,
-    confidence: 0.98,
-    sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
-    codeEntity: 'public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload)',
-    commitHash: '9a31bc4',
-    pullRequest: '#6 KAN-21: Xử lý sự kiện Push và Pull Request từ GitHub Webhook',
-    diffSnippet: `@@ -20,3 +20,10 @@
-- syncService.checkRepoManual();
-+ EventResponse res = webhookProcessor.handleEvent(payload.getEvent(), payload.getCommits());
-+ redisCache.setEx("event:" + payload.getDeliveryId(), 900, "PROCESSED");`,
-    oldContent: `# Quy Trình Đồng Bộ GitHub Webhook (Cũ)
-
-1. Kiểm tra commit định kỳ bằng cronjob thủ công.
-2. Không nhận diện được sự kiện Pull Request thời gian thực.
-3. Người dùng phải ấn nút đồng bộ tài liệu bằng tay.`,
-    newContent: `# Quy Trình Đồng Bộ GitHub Webhook (Tự Động Thời Gian Thực)
-
-1. Lắng nghe Webhook Push và Pull Request từ GitHub Repository.
-2. Lưu vết delivery ID vào Redis Cache để chống trùng lặp sự kiện (Idempotency).
-3. Tự động kích hoạt phân tích Drift Detection qua FastAPI AST Parser ngay khi có commit mới.`
-  },
-  {
-    id: 'referential',
-    title: 'Kịch bản 3: Referential Drift (Tái cấu trúc parser sang AST Tree-Sitter)',
-    type: 'Referential' as const,
-    severity: 'Low' as const,
-    confidence: 0.91,
-    sourceFile: 'ai-engine/app/parser/ast_analyzer.py',
-    codeEntity: 'class LivingDocsTreeSitterParser(BaseParser)',
-    commitHash: '74456b5',
-    pullRequest: '#2 KAN-9: Thay thế Regex bằng Tree-Sitter AST',
-    diffSnippet: `@@ -1,3 +1,8 @@
-- import re
-+ from tree_sitter import Language, Parser
-+ import ast`,
-    oldContent: `# Module Parser Phân Tích Mã Nguồn
-
-Sử dụng biểu thức chính quy (Regular Expressions) để dò tìm các từ khóa 'class', 'def', 'function' trong file nguồn.`,
-    newContent: `# Module Parser Phân Tích Mã Nguồn (AST Tree-Sitter)
-
-Sử dụng AST Parser và Tree-sitter để phân tích cây cú pháp đầy đủ, đảm bảo độ chính xác tuyệt đối và loại bỏ hoàn toàn các trường hợp False Positives từ comments hay chuỗi văn bản.`
-  }
-];
+import { Sliders, CheckCircle2, RotateCcw } from 'lucide-react';
 
 export default function DiffViewPage() {
-  const [activeMode, setActiveMode] = useState<'preset' | 'versions' | 'custom'>('versions');
-  
-  // Dành cho kịch bản mẫu
-  const [selectedScenario, setSelectedScenario] = useState(presetScenarios[0]);
-  
-  // Dành cho so sánh phiên bản tài liệu hệ thống
-  const [systemDocuments, setSystemDocuments] = useState<DocumentItem[]>([]);
-  const [selectedDocId, setSelectedDocId] = useState<number>(1);
-  const [loadingDocs, setLoadingDocs] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { documents, setIsTestModalOpen } = useLivingDocs();
 
-  // Dành cho tự nhập dữ liệu tùy chỉnh
-  const [customOld, setCustomOld] = useState(presetScenarios[0].oldContent);
-  const [customNew, setCustomNew] = useState(presetScenarios[0].newContent);
+  const [selectedDocId, setSelectedDocId] = useState<number>(documents[0]?.id || 1);
+  const [customMode, setCustomMode] = useState<boolean>(false);
 
-  // Tải danh sách tài liệu từ hệ thống LivingDocs
-  useEffect(() => {
-    async function fetchDocs() {
-      setLoadingDocs(true);
-      try {
-        const docs = await workflowApi.getDocuments();
-        setSystemDocuments(docs);
-        if (docs.length > 0) {
-          setSelectedDocId(docs[0].id);
-        }
-      } catch (err) {
-        console.error('Lỗi khi tải tài liệu hệ thống:', err);
-      } finally {
-        setLoadingDocs(false);
-      }
-    }
-    fetchDocs();
-  }, []);
+  // Dữ liệu nhập tùy chỉnh trực tiếp để test
+  const [customTitle, setCustomTitle] = useState('OrderService_Guide.md - Đặc tả xử lý đơn hàng');
+  const [customSourceFile, setCustomSourceFile] = useState('backend/src/main/java/com/livingdocs/service/OrderService.java');
+  const [customCodeEntity, setCustomCodeEntity] = useState('public OrderResponse createOrder(OrderRequest req)');
+  const [customCommit, setCustomCommit] = useState('e4a19c0');
+  const [customPR, setCustomPR] = useState('#18: Tách logic thanh toán và đặt hàng');
+  const [customDiffSnippet, setCustomDiffSnippet] = useState('- public Order createOrder(Order req) { ... }\n+ public OrderResponse createOrder(OrderRequest req) {\n+     return orderProcessor.execute(req);\n+ }');
+  const [customOldContent, setCustomOldContent] = useState('# Đặc Tả OrderService (Cũ)\n\nGọi hàm tạo đơn hàng đồng bộ trực tiếp với database.');
+  const [customNewContent, setCustomNewContent] = useState('# Đặc Tả OrderService (Mới - Tự Động Cập Nhật)\n\nQuy trình tạo đơn hàng bất đồng bộ thông qua Kafka Event Streaming.');
 
-  const currentSystemDoc = systemDocuments.find(d => d.id === selectedDocId) || systemDocuments[0];
+  const [notification, setNotification] = useState<string | null>(null);
 
-  const handleActionNotification = (msg: string, type: 'success' | 'error' = 'success') => {
-    setNotification({ message: msg, type });
-    setTimeout(() => setNotification(null), 4000);
+  const showNotify = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3500);
   };
+
+  const currentDoc = documents.find(d => d.id === selectedDocId) || documents[0];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-slate-900">Bộ So Sánh Sai Lệch Tài Liệu (Diff View Component)</h1>
-            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">
-              So sánh đa phiên bản
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Trực quan hóa sự khác biệt giữa các phiên bản tài liệu, liên kết bằng chứng Grounding Evidence từ AST Code và hỗ trợ quy trình duyệt tài liệu.
-          </p>
-        </div>
-
-        {/* 3 Chế độ xem */}
-        <div className="flex items-center space-x-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs">
-          <button
-            onClick={() => setActiveMode('versions')}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1.5 transition ${
-              activeMode === 'versions'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Tài liệu hệ thống</span>
-          </button>
-          <button
-            onClick={() => setActiveMode('preset')}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1.5 transition ${
-              activeMode === 'preset'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <Code2 className="w-3.5 h-3.5" />
-            <span>Kịch bản mẫu</span>
-          </button>
-          <button
-            onClick={() => setActiveMode('custom')}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1.5 transition ${
-              activeMode === 'custom'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Tự nhập thử nghiệm</span>
-          </button>
-        </div>
+      {/* Tiêu đề trang - Không bọc Card, nằm trực tiếp trên nền */}
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">So sánh thay đổi (Diff View)</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Trực quan hóa sự khác biệt giữa tài liệu hiện hành và bản cập nhật đề xuất, đính kèm bằng chứng Grounding Evidence từ mã nguồn.
+        </p>
       </div>
 
       {/* Thông báo thao tác */}
       {notification && (
-        <div className={`p-3 rounded-xl border text-xs flex items-center space-x-2 transition-all ${
-          notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-        }`}>
-          {notification.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />}
-          <span>{notification.message}</span>
+        <div className="p-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{notification}</span>
         </div>
       )}
 
-      {/* Chế độ 1: So sánh phiên bản tài liệu hệ thống LivingDocs */}
-      {activeMode === 'versions' && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <div className="text-xs font-bold text-slate-700 flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-sky-600" />
-                <span>CHỌN TÀI LIỆU TRONG HỆ THỐNG ĐỂ SO SÁNH PHIÊN BẢN:</span>
-              </div>
-              <span className="text-xs text-slate-400 font-mono">
-                {systemDocuments.length} tài liệu đã đăng ký
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {systemDocuments.map((doc) => {
-                const isSelected = selectedDocId === doc.id;
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => setSelectedDocId(doc.id)}
-                    className={`p-3 rounded-xl border cursor-pointer transition text-xs ${
-                      isSelected
-                        ? 'border-sky-500 bg-sky-50/60 shadow-sm ring-1 ring-sky-500'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-[11px] font-bold text-slate-800 truncate">{doc.title.split(' - ')[0]}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        doc.status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-700' :
-                        doc.status === 'APPROVED' ? 'bg-blue-100 text-blue-700' :
-                        doc.status === 'IN_REVIEW' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {doc.status}
-                      </span>
-                    </div>
-                    <p className="text-slate-500 text-[11px] truncate mb-2">{doc.category}</p>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-100">
-                      <span>v{doc.version}</span>
-                      <span className="text-sky-600 font-semibold">{doc.driftType || 'Signature'} Drift</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* Thanh công cụ ngang gọn gàng: Dropdown chọn tài liệu + Nút chuyển chế độ + Nút Tự nhập dữ liệu test */}
+      <div className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Dropdown chọn tài liệu */}
+          <div className="flex items-center space-x-2">
+            <span className="font-medium text-slate-600">Chọn tài liệu:</span>
+            <select
+              value={customMode ? 'CUSTOM' : selectedDocId}
+              onChange={(e) => {
+                if (e.target.value === 'CUSTOM') {
+                  setCustomMode(true);
+                } else {
+                  setCustomMode(false);
+                  setSelectedDocId(Number(e.target.value));
+                }
+              }}
+              className="bg-white border border-slate-300 rounded px-2.5 py-1.5 font-medium text-slate-800 outline-none focus:border-blue-500"
+            >
+              {documents.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.title.split(' - ')[0]} (v{d.version} - {d.status})
+                </option>
+              ))}
+              <option value="CUSTOM">★ [Tự nhập dữ liệu test thử nghiệm]</option>
+            </select>
           </div>
 
-          {/* Diff Viewer cho tài liệu hệ thống */}
-          {currentSystemDoc && (
-            <DiffViewer
-              title={currentSystemDoc.title}
-              oldVersion={`Bản lưu trữ hiện hành`}
-              newVersion={`Bản cập nhật v${currentSystemDoc.version} (AST Sync)`}
-              oldContent={currentSystemDoc.oldContent || '# Nội dung ban đầu chưa được ghi nhận'}
-              newContent={currentSystemDoc.content}
-              driftType={currentSystemDoc.driftType}
-              driftSeverity={currentSystemDoc.driftSeverity}
-              confidenceScore={currentSystemDoc.confidenceScore}
-              groundingEvidence={currentSystemDoc.groundingEvidence}
-              onAccept={() => handleActionNotification(`Đã chấp nhận cập nhật cho tài liệu ${currentSystemDoc.title.split(' - ')[0]}`)}
-              onEdit={() => handleActionNotification(`Mở giao diện biên tập tài liệu ${currentSystemDoc.title.split(' - ')[0]}`)}
-              onDismiss={() => handleActionNotification(`Đã bỏ qua sai lệch của tài liệu ${currentSystemDoc.title.split(' - ')[0]}`)}
-              onRollback={() => handleActionNotification(`Đã kích hoạt rollback về phiên bản trước của tài liệu ${currentSystemDoc.title.split(' - ')[0]}`)}
-            />
-          )}
+          <span className="text-slate-300 hidden sm:inline">|</span>
+
+          {/* Trạng thái chế độ */}
+          <span className="text-slate-500">
+            {customMode ? (
+              <span className="text-blue-600 font-semibold">Chế độ: Tự nhập dữ liệu test</span>
+            ) : (
+              <span>Chế độ: <strong className="text-slate-700">{currentDoc?.title.split(' - ')[0]}</strong></span>
+            )}
+          </span>
         </div>
-      )}
 
-      {/* Chế độ 2: Kịch bản mẫu (Preset Scenarios) */}
-      {activeMode === 'preset' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {presetScenarios.map((sc) => {
-              const isSelected = selectedScenario.id === sc.id;
-              return (
-                <div
-                  key={sc.id}
-                  onClick={() => setSelectedScenario(sc)}
-                  className={`p-4 rounded-xl border cursor-pointer transition text-xs ${
-                    isSelected
-                      ? 'border-sky-500 bg-sky-50/50 shadow-sm ring-1 ring-sky-500'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono font-bold text-sky-700">[{sc.type} Drift]</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      sc.severity === 'Critical' ? 'bg-red-100 text-red-700' :
-                      sc.severity === 'High' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {sc.severity}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-1 leading-snug">{sc.title}</h3>
-                  <p className="text-slate-500 text-[11px] font-mono truncate">{sc.sourceFile}</p>
-                </div>
-              );
-            })}
-          </div>
+        {/* Nút thao tác chuyển chế độ hoặc mở modal */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setCustomMode(!customMode)}
+            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
+              customMode ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>{customMode ? 'Xem tài liệu hệ thống' : 'Tự nhập dữ liệu test'}</span>
+          </button>
 
-          <DiffViewer
-            title={selectedScenario.title}
-            oldVersion="Bản hiện hành"
-            newVersion="AI Tự động cập nhật"
-            oldContent={selectedScenario.oldContent}
-            newContent={selectedScenario.newContent}
-            driftType={selectedScenario.type}
-            driftSeverity={selectedScenario.severity}
-            confidenceScore={selectedScenario.confidence}
-            groundingEvidence={{
-              sourceFile: selectedScenario.sourceFile,
-              codeEntity: selectedScenario.codeEntity,
-              commitHash: selectedScenario.commitHash,
-              pullRequest: selectedScenario.pullRequest,
-              diffSnippet: selectedScenario.diffSnippet
-            }}
-            onAccept={() => handleActionNotification('Đã chấp thuận đề xuất và chuyển vào hàng đợi kiểm duyệt!')}
-            onEdit={() => handleActionNotification('Mở trình soạn thảo Markdown để tinh chỉnh nội dung')}
-            onDismiss={() => handleActionNotification('Đã bỏ qua cảnh báo sai lệch tài liệu')}
-            onRollback={() => handleActionNotification('Khôi phục tài liệu về phiên bản gốc')}
-          />
+          <button
+            onClick={() => setIsTestModalOpen(true)}
+            className="px-3 py-1.5 rounded font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 transition"
+          >
+            + Quản lý toàn bộ tài liệu test
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* Chế độ 3: Tự nhập dữ liệu tùy chỉnh (Playground) */}
-      {activeMode === 'custom' && (
-        <div className="space-y-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
-              <Sliders className="w-4 h-4 text-sky-600" />
-              <span>Khu vực nhập dữ liệu thử nghiệm Diff View trực tiếp</span>
+      {/* Khu vực nhập trực tiếp khi ở chế độ Custom Mode */}
+      {customMode && (
+        <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3 text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-900">
+              Khu vực nhập / sửa dữ liệu kiểm thử Diff View trực tiếp:
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phiên bản gốc / ban đầu (Original Version):
-                </label>
-                <textarea
-                  rows={6}
-                  value={customOld}
-                  onChange={(e) => setCustomOld(e.target.value)}
-                  className="w-full text-xs font-mono p-3 border border-slate-200 rounded-xl focus:ring-1 focus:ring-sky-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-emerald-800 mb-1">
-                  Phiên bản cập nhật mới (Updated Version):
-                </label>
-                <textarea
-                  rows={6}
-                  value={customNew}
-                  onChange={(e) => setCustomNew(e.target.value)}
-                  className="w-full text-xs font-mono p-3 border border-slate-200 rounded-xl focus:ring-1 focus:ring-emerald-500 outline-none"
-                />
-              </div>
+            <button
+              onClick={() => {
+                setCustomTitle('Custom_API_Spec.md');
+                setCustomOldContent('# Nội dung cũ');
+                setCustomNewContent('# Nội dung mới đã được cập nhật');
+                setCustomDiffSnippet('+ public void newMethod()');
+              }}
+              className="text-slate-500 hover:text-slate-800 flex items-center space-x-1 text-[11px]"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Xóa trắng / Mẫu nhanh</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Tên file tài liệu:</label>
+              <input
+                type="text"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">File code nguồn:</label>
+              <input
+                type="text"
+                value={customSourceFile}
+                onChange={(e) => setCustomSourceFile(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Chữ ký hàm / Entity:</label>
+              <input
+                type="text"
+                value={customCodeEntity}
+                onChange={(e) => setCustomCodeEntity(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+              />
             </div>
           </div>
 
-          <DiffViewer
-            title="So sánh nội dung người dùng tùy chỉnh"
-            oldVersion="Bản gốc của bạn"
-            newVersion="Bản đã sửa của bạn"
-            oldContent={customOld}
-            newContent={customNew}
-            driftType="Signature"
-            driftSeverity="Medium"
-            confidenceScore={0.93}
-            groundingEvidence={{
-              sourceFile: 'custom/playground/interactive.md',
-              codeEntity: 'customUserDefinedContent()',
-              commitHash: 'head-draft',
-              diffSnippet: 'Custom diff calculated dynamically in browser'
-            }}
-          />
+          <div>
+            <label className="block text-slate-700 font-medium mb-1">Đoạn code diff trích xuất:</label>
+            <textarea
+              rows={2}
+              value={customDiffSnippet}
+              onChange={(e) => setCustomDiffSnippet(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Bản tài liệu cũ (oldContent):</label>
+              <textarea
+                rows={5}
+                value={customOldContent}
+                onChange={(e) => setCustomOldContent(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Bản tài liệu mới (newContent):</label>
+              <textarea
+                rows={5}
+                value={customNewContent}
+                onChange={(e) => setCustomNewContent(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Hiển thị Diff Viewer */}
+      {customMode ? (
+        <DiffViewer
+          title={customTitle}
+          oldVersion="Bản cũ nhập thử"
+          newVersion="Bản mới nhập thử"
+          oldContent={customOldContent}
+          newContent={customNewContent}
+          driftType="Signature"
+          driftSeverity="High"
+          confidenceScore={0.96}
+          groundingEvidence={{
+            sourceFile: customSourceFile,
+            codeEntity: customCodeEntity,
+            commitHash: customCommit,
+            pullRequest: customPR,
+            diffSnippet: customDiffSnippet
+          }}
+          onAccept={() => showNotify('Đã chấp thuận bản cập nhật thử nghiệm!')}
+          onEdit={() => showNotify('Mở trình biên soạn')}
+          onDismiss={() => showNotify('Đã bỏ qua thay đổi')}
+        />
+      ) : (
+        currentDoc && (
+          <DiffViewer
+            title={currentDoc.title}
+            oldVersion={`Bản lưu hành (v${currentDoc.version})`}
+            newVersion="Bản tự động cập nhật (AST Sync)"
+            oldContent={currentDoc.oldContent || '# Nội dung ban đầu chưa được ghi nhận'}
+            newContent={currentDoc.content}
+            driftType={currentDoc.driftType}
+            driftSeverity={currentDoc.driftSeverity}
+            confidenceScore={currentDoc.confidenceScore}
+            groundingEvidence={currentDoc.groundingEvidence}
+            onAccept={() => showNotify(`Đã chấp thuận cập nhật cho tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onEdit={() => showNotify(`Mở chỉnh sửa cho tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onDismiss={() => showNotify(`Đã bỏ qua sai lệch của tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onRollback={() => showNotify(`Đã hoàn tác tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+          />
+        )
       )}
     </div>
   );
