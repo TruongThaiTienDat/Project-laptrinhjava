@@ -1,258 +1,265 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLivingDocs } from '@/context/LivingDocsContext';
 import { DiffViewer } from '@/components/DiffViewer';
-import { 
-  GitCompare, 
-  Sparkles, 
-  Sliders, 
-  RefreshCw, 
-  Check, 
-  Layers, 
-  Code2, 
-  FileCheck
-} from 'lucide-react';
-
-const presetScenarios = [
-  {
-    id: 'signature',
-    title: 'Kịch bản 1: Signature Drift (Thay đổi tham số & Endpoint REST)',
-    type: 'Signature' as const,
-    severity: 'High' as const,
-    confidence: 0.96,
-    sourceFile: 'backend/src/main/java/com/livingdocs/controller/WorkflowController.java',
-    codeEntity: 'public ResponseEntity<DocResponse> updateStatus(@PathVariable Long id, @RequestBody StatusUpdateReq req)',
-    commitHash: 'f5db245',
-    pullRequest: '#4 KAN-17: Hoàn thành API xét duyệt tài liệu',
-    diffSnippet: `@@ -15,4 +15,6 @@
-- @PutMapping("/api/workflow/{id}")
-+ @PutMapping("/api/workflow/{id}/staff-approve")
-+ @PutMapping("/api/workflow/{id}/manager-publish")
-+ @PutMapping("/api/workflow/{id}/reject")`,
-    oldContent: `# Hướng Dẫn Gọi API Workflow (Cũ)
-
-Hệ thống chỉ hỗ trợ 1 endpoint cập nhật duy nhất:
-- PUT /api/workflow/{id}: Gửi cập nhật trạng thái chung.
-
-Tham số body:
-{
-  "status": "APPROVED"
-}`,
-    newContent: `# Hướng Dẫn Gọi API Workflow (Mới - Tự Động Cập Nhật)
-
-Hệ thống đã tách thành quy trình kiểm duyệt 2 cấp:
-- PUT /api/workflow/{id}/submit: Gửi tài liệu vào hàng đợi
-- PUT /api/workflow/{id}/staff-approve: Quyền Staff kiểm duyệt
-- PUT /api/workflow/{id}/manager-publish: Quyền Manager xuất bản chính thức
-- PUT /api/workflow/{id}/reject: Từ chối tài liệu và hoàn trả tác giả
-
-Tham số body:
-{
-  "role": "Staff",
-  "reason": "Ghi chú kiểm duyệt nếu từ chối"
-}`
-  },
-  {
-    id: 'semantic',
-    title: 'Kịch bản 2: Semantic Drift (Thay đổi logic xử lý sự kiện GitHub Webhook)',
-    type: 'Semantic' as const,
-    severity: 'Critical' as const,
-    confidence: 0.98,
-    sourceFile: 'backend/src/main/java/com/livingdocs/controller/GitHubWebhookController.java',
-    codeEntity: 'public ResponseEntity<String> handleGitHubWebhook(@RequestBody GitHubPayload payload)',
-    commitHash: '9a31bc4',
-    pullRequest: '#6 KAN-21: Xử lý sự kiện Push và Pull Request từ GitHub Webhook',
-    diffSnippet: `@@ -20,3 +20,10 @@
-- syncService.checkRepoManual();
-+ EventResponse res = webhookProcessor.handleEvent(payload.getEvent(), payload.getCommits());
-+ redisCache.setEx("event:" + payload.getDeliveryId(), 900, "PROCESSED");`,
-    oldContent: `# Quy Trình Đồng Bộ GitHub Webhook (Cũ)
-
-1. Kiểm tra commit định kỳ bằng cronjob thủ công.
-2. Không nhận diện được sự kiện Pull Request thời gian thực.
-3. Người dùng phải ấn nút đồng bộ tài liệu bằng tay.`,
-    newContent: `# Quy Trình Đồng Bộ GitHub Webhook (Tự Động Thời Gian Thực)
-
-1. Lắng nghe Webhook Push và Pull Request từ GitHub Repository.
-2. Lưu vết delivery ID vào Redis Cache để chống trùng lặp sự kiện (Idempotency).
-3. Tự động kích hoạt phân tích Drift Detection qua FastAPI AST Parser ngay khi có commit mới.`
-  },
-  {
-    id: 'referential',
-    title: 'Kịch bản 3: Referential Drift (Tái cấu trúc parser sang AST Tree-Sitter)',
-    type: 'Referential' as const,
-    severity: 'Low' as const,
-    confidence: 0.91,
-    sourceFile: 'ai-engine/app/parser/ast_analyzer.py',
-    codeEntity: 'class LivingDocsTreeSitterParser(BaseParser)',
-    commitHash: '74456b5',
-    pullRequest: '#2 KAN-9: Thay thế Regex bằng Tree-Sitter AST',
-    diffSnippet: `@@ -1,3 +1,8 @@
-- import re
-+ from tree_sitter import Language, Parser
-+ import ast`,
-    oldContent: `# Module Parser Phân Tích Mã Nguồn
-
-Sử dụng biểu thức chính quy (Regular Expressions) để dò tìm các từ khóa 'class', 'def', 'function' trong file nguồn.`,
-    newContent: `# Module Parser Phân Tích Mã Nguồn (AST Tree-Sitter)
-
-Sử dụng AST Parser và Tree-sitter để phân tích cây cú pháp đầy đủ, đảm bảo độ chính xác tuyệt đối và loại bỏ hoàn toàn các trường hợp False Positives từ comments hay chuỗi văn bản.`
-  }
-];
+import { Sliders, CheckCircle2, RotateCcw, Upload, Trash2 } from 'lucide-react';
 
 export default function DiffViewPage() {
-  const [selectedScenario, setSelectedScenario] = useState(presetScenarios[0]);
-  const [customMode, setCustomMode] = useState(false);
-  const [customOld, setCustomOld] = useState(presetScenarios[0].oldContent);
-  const [customNew, setCustomNew] = useState(presetScenarios[0].newContent);
+  const { documents, deleteDocument, setIsTestModalOpen } = useLivingDocs();
+
+  const [selectedDocId, setSelectedDocId] = useState<number>(documents[0]?.id || 1);
+  const [customMode, setCustomMode] = useState<boolean>(false);
+
+  // Dữ liệu nhập tùy chỉnh trực tiếp để test
+  const [customTitle, setCustomTitle] = useState('OrderService_Guide.md - Đặc tả xử lý đơn hàng');
+  const [customSourceFile, setCustomSourceFile] = useState('backend/src/main/java/com/livingdocs/service/OrderService.java');
+  const [customCodeEntity, setCustomCodeEntity] = useState('public OrderResponse createOrder(OrderRequest req)');
+  const [customCommit, setCustomCommit] = useState('e4a19c0');
+  const [customPR, setCustomPR] = useState('#18: Tách logic thanh toán và đặt hàng');
+  const [customDiffSnippet, setCustomDiffSnippet] = useState('- public Order createOrder(Order req) { ... }\n+ public OrderResponse createOrder(OrderRequest req) {\n+     return orderProcessor.execute(req);\n+ }');
+  const [customOldContent, setCustomOldContent] = useState('# Đặc Tả OrderService (Cũ)\n\nGọi hàm tạo đơn hàng đồng bộ trực tiếp với database.');
+  const [customNewContent, setCustomNewContent] = useState('# Đặc Tả OrderService (Mới - Tự Động Cập Nhật)\n\nQuy trình tạo đơn hàng bất đồng bộ thông qua Kafka Event Streaming.');
+
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const showNotify = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3500);
+  };
+
+  const currentDoc = documents.find(d => d.id === selectedDocId) || documents[0];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6 animate-fadeIn">
+      {/* Tiêu đề trang & Nút tải tài liệu lên */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-slate-900">Bộ So Sánh Sai Lệch Tài Liệu (Diff View Component)</h1>
-            <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-700 rounded font-medium border border-slate-200">
-              So sánh tài liệu
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Trực quan hóa sự khác biệt giữa tài liệu đang lưu hành và nội dung AI tự động đề xuất, đính kèm bằng chứng Grounding Evidence từ AST Code.
+          <h1 className="text-2xl font-semibold text-slate-900">So sánh thay đổi (Diff View)</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Trực quan hóa sự khác biệt giữa tài liệu hiện hành và bản cập nhật đề xuất, đính kèm bằng chứng Grounding Evidence từ mã nguồn.
           </p>
         </div>
 
-        {/* Mode switch */}
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs">
+        {/* Nút bấm tải tài liệu lên nổi bật màu blue-600 */}
+        <button
+          onClick={() => setIsTestModalOpen(true)}
+          className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Tải tài liệu lên / Tạo bản kiểm tra</span>
+        </button>
+      </div>
+
+      {/* Thông báo thao tác */}
+      {notification && (
+        <div className="p-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{notification}</span>
+        </div>
+      )}
+
+      {/* Thanh công cụ ngang gọn gàng: Dropdown chọn tài liệu + Nút chuyển chế độ + Nút Tự nhập dữ liệu test */}
+      <div className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Dropdown chọn tài liệu */}
+          <div className="flex items-center space-x-2">
+            <span className="font-medium text-slate-600">Chọn tài liệu:</span>
+            <select
+              value={customMode ? 'CUSTOM' : selectedDocId}
+              onChange={(e) => {
+                if (e.target.value === 'CUSTOM') {
+                  setCustomMode(true);
+                } else {
+                  setCustomMode(false);
+                  setSelectedDocId(Number(e.target.value));
+                }
+              }}
+              className="bg-white border border-slate-300 rounded px-2.5 py-1.5 font-medium text-slate-800 outline-none focus:border-blue-500"
+            >
+              {documents.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.title.split(' - ')[0]} (v{d.version} - {d.status})
+                </option>
+              ))}
+              <option value="CUSTOM">★ [Tự nhập dữ liệu test thử nghiệm]</option>
+            </select>
+          </div>
+
+          <span className="text-slate-300 hidden sm:inline">|</span>
+
+          {/* Trạng thái chế độ */}
+          <span className="text-slate-500">
+            {customMode ? (
+              <span className="text-blue-600 font-semibold">Chế độ: Tự nhập dữ liệu test</span>
+            ) : (
+              <span>Chế độ: <strong className="text-slate-700">{currentDoc?.title.split(' - ')[0]}</strong></span>
+            )}
+          </span>
+        </div>
+
+        {/* Nút thao tác chuyển chế độ hoặc mở modal */}
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => setCustomMode(false)}
-            className={`px-3 py-1 rounded-lg font-semibold transition ${
-              !customMode
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-200'
+            onClick={() => setCustomMode(!customMode)}
+            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
+              customMode ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
             }`}
           >
-            Kịch bản mẫu LivingDocs
+            <Sliders className="w-3.5 h-3.5" />
+            <span>{customMode ? 'Xem tài liệu hệ thống' : 'Tự nhập dữ liệu test'}</span>
           </button>
+
           <button
-            onClick={() => setCustomMode(true)}
-            className={`px-3 py-1 rounded-lg font-semibold transition ${
-              customMode
-                ? 'bg-sky-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-200'
-            }`}
+            onClick={() => setIsTestModalOpen(true)}
+            className="px-3 py-1.5 rounded font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 transition"
           >
-            Tự nhập tài liệu để so sánh
+            + Quản lý toàn bộ tài liệu test
           </button>
+
+          {!customMode && currentDoc && (
+            <button
+              onClick={() => {
+                if (confirm(`Bạn có chắc muốn xóa tài liệu "${currentDoc.title.split(' - ')[0]}"?`)) {
+                  deleteDocument(currentDoc.id);
+                  showNotify(`Đã xóa tài liệu "${currentDoc.title.split(' - ')[0]}".`);
+                }
+              }}
+              className="px-2.5 py-1.5 rounded font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition flex items-center space-x-1"
+              title="Xóa tài liệu kiểm thử này khỏi hệ thống"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa tài liệu</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Preset Scenario Selector */}
-      {!customMode ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {presetScenarios.map((sc) => {
-            const isSelected = selectedScenario.id === sc.id;
-            return (
-              <div
-                key={sc.id}
-                onClick={() => setSelectedScenario(sc)}
-                className={`p-4 rounded-xl border cursor-pointer transition text-xs ${
-                  isSelected
-                    ? 'border-sky-500 bg-sky-50/50 shadow-sm ring-1 ring-sky-500'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono font-bold text-sky-700">[{sc.type} Drift]</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    sc.severity === 'Critical' ? 'bg-red-100 text-red-700' :
-                    sc.severity === 'High' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {sc.severity}
-                  </span>
-                </div>
-                <h3 className="font-bold text-slate-900 mb-1 leading-snug">{sc.title}</h3>
-                <p className="text-slate-500 text-[11px] font-mono truncate">{sc.sourceFile}</p>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Custom Textarea comparison input */
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-sky-600" />
-            <span>Khu vực nhập dữ liệu thử nghiệm Diff View trực tiếp</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Khu vực nhập trực tiếp khi ở chế độ Custom Mode */}
+      {customMode && (
+        <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3 text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 className="font-semibold text-slate-900">
+              Khu vực nhập / sửa dữ liệu kiểm thử Diff View trực tiếp:
+            </h3>
+            <button
+              onClick={() => {
+                setCustomTitle('Custom_API_Spec.md');
+                setCustomOldContent('# Nội dung cũ');
+                setCustomNewContent('# Nội dung mới đã được cập nhật');
+                setCustomDiffSnippet('+ public void newMethod()');
+              }}
+              className="text-slate-500 hover:text-slate-800 flex items-center space-x-1 text-[11px]"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Xóa trắng / Mẫu nhanh</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tài liệu ban đầu (Original Version):
-              </label>
-              <textarea
-                rows={6}
-                value={customOld}
-                onChange={(e) => setCustomOld(e.target.value)}
-                className="w-full text-xs font-mono p-3 border border-slate-200 rounded-xl focus:ring-1 focus:ring-sky-500 outline-none"
+              <label className="block text-slate-700 font-medium mb-1">Tên file tài liệu:</label>
+              <input
+                type="text"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-emerald-800 mb-1">
-                Tài liệu cập nhật mới (Updated Version):
-              </label>
+              <label className="block text-slate-700 font-medium mb-1">File code nguồn:</label>
+              <input
+                type="text"
+                value={customSourceFile}
+                onChange={(e) => setCustomSourceFile(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Chữ ký hàm / Entity:</label>
+              <input
+                type="text"
+                value={customCodeEntity}
+                onChange={(e) => setCustomCodeEntity(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-slate-700 font-medium mb-1">Đoạn code diff trích xuất:</label>
+            <textarea
+              rows={2}
+              value={customDiffSnippet}
+              onChange={(e) => setCustomDiffSnippet(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Bản tài liệu cũ (oldContent):</label>
               <textarea
-                rows={6}
-                value={customNew}
-                onChange={(e) => setCustomNew(e.target.value)}
-                className="w-full text-xs font-mono p-3 border border-slate-200 rounded-xl focus:ring-1 focus:ring-emerald-500 outline-none"
+                rows={5}
+                value={customOldContent}
+                onChange={(e) => setCustomOldContent(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Bản tài liệu mới (newContent):</label>
+              <textarea
+                rows={5}
+                value={customNewContent}
+                onChange={(e) => setCustomNewContent(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Render the Diff View Component */}
-      {!customMode ? (
+      {/* Hiển thị Diff Viewer */}
+      {customMode ? (
         <DiffViewer
-          title={selectedScenario.title}
-          oldVersion="Bản hiện hành"
-          newVersion="AI Tự động cập nhật"
-          oldContent={selectedScenario.oldContent}
-          newContent={selectedScenario.newContent}
-          driftType={selectedScenario.type}
-          driftSeverity={selectedScenario.severity}
-          confidenceScore={selectedScenario.confidence}
+          title={customTitle}
+          oldVersion="Bản cũ nhập thử"
+          newVersion="Bản mới nhập thử"
+          oldContent={customOldContent}
+          newContent={customNewContent}
+          driftType="Signature"
+          driftSeverity="High"
+          confidenceScore={0.96}
           groundingEvidence={{
-            sourceFile: selectedScenario.sourceFile,
-            codeEntity: selectedScenario.codeEntity,
-            commitHash: selectedScenario.commitHash,
-            pullRequest: selectedScenario.pullRequest,
-            diffSnippet: selectedScenario.diffSnippet
+            sourceFile: customSourceFile,
+            codeEntity: customCodeEntity,
+            commitHash: customCommit,
+            pullRequest: customPR,
+            diffSnippet: customDiffSnippet
           }}
-          onAccept={() => alert('Đã chấp thuận bản cập nhật tài liệu và chuyển vào hàng đợi kiểm duyệt!')}
-          onEdit={() => alert('Mở trình soạn thảo Markdown để tinh chỉnh nội dung')}
-          onDismiss={() => alert('Đã bỏ qua cảnh báo sai lệch tài liệu')}
-          onRollback={() => alert('Khôi phục tài liệu về phiên bản gốc')}
+          onAccept={() => showNotify('Đã chấp thuận bản cập nhật thử nghiệm!')}
+          onEdit={() => showNotify('Mở trình biên soạn')}
+          onDismiss={() => showNotify('Đã bỏ qua thay đổi')}
         />
       ) : (
-        <DiffViewer
-          title="So sánh nội dung người dùng tùy chỉnh"
-          oldVersion="Bản gốc của bạn"
-          newVersion="Bản đã sửa của bạn"
-          oldContent={customOld}
-          newContent={customNew}
-          driftType="Signature"
-          driftSeverity="Medium"
-          confidenceScore={0.93}
-          groundingEvidence={{
-            sourceFile: 'custom/playground/interactive.md',
-            codeEntity: 'customUserDefinedContent()',
-            commitHash: 'head-draft',
-            diffSnippet: 'Custom diff calculated dynamically in browser'
-          }}
-        />
+        currentDoc && (
+          <DiffViewer
+            title={currentDoc.title}
+            oldVersion={`Bản lưu hành (v${currentDoc.version})`}
+            newVersion="Bản tự động cập nhật (AST Sync)"
+            oldContent={currentDoc.oldContent || '# Nội dung ban đầu chưa được ghi nhận'}
+            newContent={currentDoc.content}
+            driftType={currentDoc.driftType}
+            driftSeverity={currentDoc.driftSeverity}
+            confidenceScore={currentDoc.confidenceScore}
+            groundingEvidence={currentDoc.groundingEvidence}
+            onAccept={() => showNotify(`Đã chấp thuận cập nhật cho tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onEdit={() => showNotify(`Mở chỉnh sửa cho tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onDismiss={() => showNotify(`Đã bỏ qua sai lệch của tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+            onRollback={() => showNotify(`Đã hoàn tác tài liệu ${currentDoc.title.split(' - ')[0]}`)}
+          />
+        )
       )}
     </div>
   );
 }
-

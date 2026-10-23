@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
 import './globals.css';
-import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
+import type { Metadata } from 'next';
+import { LivingDocsProvider } from '@/context/LivingDocsContext';
+import { AppShell } from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'LivingDocs - Hệ thống quản lý tài liệu',
@@ -16,17 +16,10 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="bg-slate-50 text-slate-900 antialiased min-h-screen">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <Header />
-            <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
-              {children}
-            </main>
-          </div>
-        </div>
+        <LivingDocsProvider>
+          <AppShell>{children}</AppShell>
+        </LivingDocsProvider>
       </body>
     </html>
   );
 }
-
