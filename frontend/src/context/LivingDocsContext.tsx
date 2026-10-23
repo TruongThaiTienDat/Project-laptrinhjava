@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   DocumentItem, 
   ChangeLogItem, 
@@ -13,6 +14,62 @@ import {
   initialGovernancePolicy,
   initialVersionMilestones
 } from '@/services/api';
+
+// Định nghĩa các vai trò người dùng theo đúng đề cương LivingDocs (RBAC)
+export type UserRole = 'Developer' | 'Staff' | 'Manager' | 'Technical Lead' | 'Administrator';
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarLetter: string;
+  roleDescription: string;
+}
+
+// Danh sách tài khoản mẫu phục vụ kiểm thử phân quyền
+export const sampleAccounts: AuthUser[] = [
+  {
+    id: 'user-dev',
+    name: 'Trần Minh Quân',
+    email: 'dev@livingdocs.vn',
+    role: 'Developer',
+    avatarLetter: 'Q',
+    roleDescription: 'Quyền tạo tài liệu, gửi duyệt'
+  },
+  {
+    id: 'user-staff',
+    name: 'Nguyễn Văn A',
+    email: 'staff@livingdocs.vn',
+    role: 'Staff',
+    avatarLetter: 'A',
+    roleDescription: 'Quyền kiểm tra và duyệt bước 1'
+  },
+  {
+    id: 'user-manager',
+    name: 'Lê Hoàng Nam',
+    email: 'manager@livingdocs.vn',
+    role: 'Manager',
+    avatarLetter: 'N',
+    roleDescription: 'Quyền phê duyệt cuối cùng và xuất bản'
+  },
+  {
+    id: 'user-lead',
+    name: 'Phạm Quốc Bảo',
+    email: 'lead@livingdocs.vn',
+    role: 'Technical Lead',
+    avatarLetter: 'B',
+    roleDescription: 'Quyền xem thống kê và quản trị cấu hình'
+  },
+  {
+    id: 'user-admin',
+    name: 'Trương Thái Tiến Đạt',
+    email: 'admin@livingdocs.vn',
+    role: 'Administrator',
+    avatarLetter: 'Đ',
+    roleDescription: 'Toàn quyền quản trị hệ thống'
+  }
+];
 
 // Dữ liệu tài liệu mặc định chuẩn đồ án LivingDocs
 export const defaultMockDocuments: DocumentItem[] = [
@@ -397,8 +454,14 @@ Sử dụng chuẩn GitHub OAuth2 và JSON Web Token (JWT) để bảo mật h�
 ];
 
 interface LivingDocsContextType {
-  role: 'Staff' | 'Manager' | 'Developer';
-  setRole: (role: 'Staff' | 'Manager' | 'Developer') => void;
+  // Quản lý người dùng & phân quyền RBAC
+  currentUser: AuthUser;
+  role: UserRole;
+  setRole: (role: UserRole) => void;
+  setCurrentUser: (user: AuthUser) => void;
+  login: (user: AuthUser) => void;
+  logout: () => void;
+
   documents: DocumentItem[];
   changeLogs: ChangeLogItem[];
   coverageGaps: CoverageGapItem[];
@@ -431,10 +494,13 @@ interface LivingDocsContextType {
 
 const LivingDocsContext = createContext<LivingDocsContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'livingdocs_state_dynamic_v2';
+const STORAGE_KEY = 'livingdocs_state_dynamic_v3';
 
 export function LivingDocsProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRoleState] = useState<'Staff' | 'Manager' | 'Developer'>('Staff');
+  const router = useRouter();
+
+  // Mặc định tài khoản ban đầu là Staff Reviewer (Nguyễn Văn A)
+  const [currentUser, setCurrentUserState] = useState<AuthUser>(sampleAccounts[1]);
   const [documents, setDocuments] = useState<DocumentItem[]>(defaultMockDocuments);
   const [changeLogs, setChangeLogs] = useState<ChangeLogItem[]>(defaultMockLogs);
   const [coverageGaps, setCoverageGaps] = useState<CoverageGapItem[]>(initialCoverageGaps);
@@ -453,7 +519,9 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.role) setRoleState(parsed.role);
+        if (parsed.currentUser) {
+          setCurrentUserState(parsed.currentUser);
+        }
         if (parsed.documents) setDocuments(parsed.documents);
         if (parsed.changeLogs) setChangeLogs(parsed.changeLogs);
         if (parsed.coverageGaps) setCoverageGaps(parsed.coverageGaps);
@@ -474,7 +542,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     if (!isLoaded) return;
     try {
       const stateToSave = {
-        role,
+        currentUser,
         documents,
         changeLogs,
         coverageGaps,
@@ -487,10 +555,38 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     } catch (e) {
       console.error('Không thể lưu dữ liệu vào localStorage:', e);
     }
-  }, [role, documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
+  }, [currentUser, documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
 
-  const setRole = (newRole: 'Staff' | 'Manager' | 'Developer') => {
-    setRoleState(newRole);
+  // Đổi role trực tiếp từ Header -> tự động khớp với tài khoản mẫu tương ứng
+  const setRole = (newRole: UserRole) => {
+    const matchedAccount = sampleAccounts.find(acc => acc.role === newRole);
+    if (matchedAccount) {
+      setCurrentUserState(matchedAccount);
+    } else {
+      setCurrentUserState(prev => ({
+        ...prev,
+        role: newRole,
+        roleDescription: `Vai trò ${newRole}`
+      }));
+    }
+  };
+
+  const setCurrentUser = (user: AuthUser) => {
+    setCurrentUserState(user);
+  };
+
+  // Đăng nhập
+  const login = (user: AuthUser) => {
+    setCurrentUserState(user);
+  };
+
+  // Đăng xuất: đặt về Guest hoặc Developer và điều hướng về /login
+  const logout = () => {
+    setCurrentUserState(sampleAccounts[0]); // Đặt tạm về tài khoản dev
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    router.push('/login');
   };
 
   // Thêm tài liệu mới
@@ -508,7 +604,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     const newLog: ChangeLogItem = {
       id: changeLogs.length + 1,
       documentId: newId,
-      role: (role as any) || 'Developer',
+      role: (currentUser.role as any) || 'Developer',
       fromStatus: 'NONE',
       toStatus: newDoc.status,
       timestamp: new Date().toISOString(),
@@ -542,16 +638,16 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     const doc = documents.find(d => d.id === id);
     if (!doc) return;
     const oldStatus = doc.status;
-    updateDocument(id, { status: 'IN_REVIEW', lastModifiedBy: role });
+    updateDocument(id, { status: 'IN_REVIEW', lastModifiedBy: currentUser.name });
 
     const newLog: ChangeLogItem = {
       id: changeLogs.length + 1,
       documentId: id,
-      role: (role as any) || 'Developer',
+      role: (currentUser.role as any) || 'Developer',
       fromStatus: oldStatus,
       toStatus: 'IN_REVIEW',
       timestamp: new Date().toISOString(),
-      note: `Gửi tài liệu vào hàng đợi kiểm duyệt bởi ${role}`
+      note: `Gửi tài liệu vào hàng đợi kiểm duyệt bởi ${currentUser.name} (${currentUser.role})`
     };
     setChangeLogs([newLog, ...changeLogs]);
   };
@@ -561,7 +657,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     const doc = documents.find(d => d.id === id);
     if (!doc) return;
     const oldStatus = doc.status;
-    updateDocument(id, { status: 'APPROVED', lastModifiedBy: 'Staff Reviewer' });
+    updateDocument(id, { status: 'APPROVED', lastModifiedBy: `${currentUser.name} (Staff)` });
 
     const newLog: ChangeLogItem = {
       id: changeLogs.length + 1,
@@ -570,7 +666,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       fromStatus: oldStatus,
       toStatus: 'APPROVED',
       timestamp: new Date().toISOString(),
-      note: note || 'Staff xác nhận nội dung tài liệu khớp với Grounding Evidence mã nguồn'
+      note: note || `Staff ${currentUser.name} xác nhận nội dung tài liệu khớp với Grounding Evidence mã nguồn`
     };
     setChangeLogs([newLog, ...changeLogs]);
   };
@@ -586,7 +682,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     updateDocument(id, { 
       status: 'PUBLISHED', 
       version: nextVer,
-      lastModifiedBy: 'Manager'
+      lastModifiedBy: `${currentUser.name} (Manager)`
     });
 
     const newLog: ChangeLogItem = {
@@ -596,7 +692,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       fromStatus: oldStatus,
       toStatus: 'PUBLISHED',
       timestamp: new Date().toISOString(),
-      note: note || `Manager phê duyệt xuất bản chính thức phiên bản v${nextVer}`
+      note: note || `Manager ${currentUser.name} phê duyệt xuất bản chính thức phiên bản v${nextVer}`
     };
     setChangeLogs([newLog, ...changeLogs]);
   };
@@ -606,16 +702,16 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     const doc = documents.find(d => d.id === id);
     if (!doc) return;
     const oldStatus = doc.status;
-    updateDocument(id, { status: 'REJECTED', lastModifiedBy: role });
+    updateDocument(id, { status: 'REJECTED', lastModifiedBy: currentUser.name });
 
     const newLog: ChangeLogItem = {
       id: changeLogs.length + 1,
       documentId: id,
-      role: (role as any) || 'Reviewer',
+      role: (currentUser.role as any) || 'Reviewer',
       fromStatus: oldStatus,
       toStatus: 'REJECTED',
       timestamp: new Date().toISOString(),
-      note: reason || 'Từ chối tài liệu do sai lệch thông tin tham số mã nguồn'
+      note: reason || `Từ chối bởi ${currentUser.name}: Sai lệch thông tin tham số mã nguồn`
     };
     setChangeLogs([newLog, ...changeLogs]);
   };
@@ -629,7 +725,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       status: 'APPROVED', 
       version: targetVersion,
       content: doc.oldContent || doc.content,
-      lastModifiedBy: 'Tech Lead (Rollback)'
+      lastModifiedBy: `${currentUser.name} (Rollback)`
     });
 
     const newLog: ChangeLogItem = {
@@ -639,7 +735,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
       fromStatus: oldStatus,
       toStatus: 'APPROVED',
       timestamp: new Date().toISOString(),
-      note: `Rollback về v${targetVersion}. Lý do: ${reason}`
+      note: `Rollback về v${targetVersion} bởi ${currentUser.name}. Lý do: ${reason}`
     };
     setChangeLogs([newLog, ...changeLogs]);
   };
@@ -679,7 +775,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
 
   // Khôi phục dữ liệu gốc
   const resetToDefaultData = () => {
-    setRoleState('Staff');
+    setCurrentUserState(sampleAccounts[1]);
     setDocuments(defaultMockDocuments);
     setChangeLogs(defaultMockLogs);
     setCoverageGaps(initialCoverageGaps);
@@ -695,8 +791,12 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
   return (
     <LivingDocsContext.Provider
       value={{
-        role,
+        currentUser,
+        role: currentUser.role,
         setRole,
+        setCurrentUser,
+        login,
+        logout,
         documents,
         changeLogs,
         coverageGaps,

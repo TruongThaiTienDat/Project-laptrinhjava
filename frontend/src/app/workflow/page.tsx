@@ -46,6 +46,12 @@ export default function WorkflowReviewPage() {
 
   const selectedDoc = documents.find(d => d.id === selectedDocId) || documents[0];
 
+  // Phân quyền thao tác trên tài liệu (RBAC)
+  const isPrivileged = role === 'Technical Lead' || role === 'Administrator';
+  const canSubmit = role === 'Developer' || isPrivileged;
+  const canStaffReview = role === 'Staff' || isPrivileged;
+  const canManagerApprove = role === 'Manager' || isPrivileged;
+
   // Lọc tài liệu theo hàng đợi
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'STAFF_QUEUE' && doc.status !== 'IN_REVIEW') return false;
@@ -60,18 +66,30 @@ export default function WorkflowReviewPage() {
 
   const handleStaffApproveAction = () => {
     if (!selectedDoc) return;
+    if (!canStaffReview) {
+      showNotify('Bạn không có quyền duyệt bước 1. Vui lòng chuyển sang vai trò Staff Reviewer.', 'error');
+      return;
+    }
     staffApprove(selectedDoc.id);
     showNotify(`Staff đã duyệt tài liệu "${selectedDoc.title.split(' - ')[0]}" và chuyển tiếp lên Manager.`);
   };
 
   const handleManagerPublishAction = () => {
     if (!selectedDoc) return;
+    if (!canManagerApprove) {
+      showNotify('Bạn không có quyền xuất bản. Vui lòng chuyển sang vai trò Manager Approver.', 'error');
+      return;
+    }
     managerPublish(selectedDoc.id);
     showNotify(`Manager đã phê duyệt và xuất bản chính thức phiên bản v${(parseFloat(selectedDoc.version) + 0.1).toFixed(1)}.`);
   };
 
   const handleSubmitDraftAction = () => {
     if (!selectedDoc) return;
+    if (!canSubmit) {
+      showNotify('Bạn không có quyền nộp tài liệu. Vui lòng chuyển sang vai trò Developer.', 'error');
+      return;
+    }
     submitForReview(selectedDoc.id);
     showNotify(`Đã gửi tài liệu "${selectedDoc.title.split(' - ')[0]}" vào hàng đợi kiểm duyệt.`);
   };
@@ -254,57 +272,109 @@ export default function WorkflowReviewPage() {
                     </div>
                   </div>
 
-                  {/* Nhóm nút Duyệt / Từ chối theo phân quyền */}
+                  {/* Nhóm nút Duyệt / Từ chối theo phân quyền RBAC */}
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Nút gửi duyệt dành cho DRAFT */}
                     {selectedDoc.status === 'DRAFT' && (
-                      <button
-                        onClick={handleSubmitDraftAction}
-                        className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Nộp kiểm duyệt (Submit)</span>
-                      </button>
+                      canSubmit ? (
+                        <button
+                          onClick={handleSubmitDraftAction}
+                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Nộp kiểm duyệt (Submit)</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-1 rounded">
+                            Chỉ Developer có quyền gửi duyệt
+                          </span>
+                          <button
+                            disabled
+                            title="Chỉ Developer hoặc Quản trị viên mới có quyền gửi nộp tài liệu"
+                            className="px-3 py-1.5 rounded bg-slate-100 text-slate-400 font-medium text-xs flex items-center space-x-1.5 cursor-not-allowed border border-slate-200"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Nộp kiểm duyệt</span>
+                          </button>
+                        </div>
+                      )
                     )}
 
                     {/* Quyền Staff: Kiểm tra & Duyệt bước 1 */}
                     {selectedDoc.status === 'IN_REVIEW' && (
-                      <>
-                        <button
-                          onClick={() => setShowRejectModal(true)}
-                          className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
-                        >
-                          <X className="w-3.5 h-3.5 text-rose-600" />
-                          <span>Từ chối</span>
-                        </button>
-                        <button
-                          onClick={handleStaffApproveAction}
-                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Staff Duyệt (Bước 1)</span>
-                        </button>
-                      </>
+                      canStaffReview ? (
+                        <>
+                          <button
+                            onClick={() => setShowRejectModal(true)}
+                            className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
+                          >
+                            <X className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Từ chối</span>
+                          </button>
+                          <button
+                            onClick={handleStaffApproveAction}
+                            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Staff Duyệt (Bước 1)</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded">
+                            {role === 'Developer'
+                              ? 'Đang chờ Staff xét duyệt (Đổi quyền sang Staff để duyệt)'
+                              : 'Cần Staff kiểm duyệt bước 1 trước'}
+                          </span>
+                          <button
+                            disabled
+                            title="Chỉ Staff Reviewer hoặc Quản trị viên mới có quyền duyệt bước 1"
+                            className="px-3 py-1.5 rounded bg-slate-100 text-slate-400 font-medium text-xs flex items-center space-x-1.5 cursor-not-allowed border border-slate-200"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Staff Duyệt (Bước 1)</span>
+                          </button>
+                        </div>
+                      )
                     )}
 
                     {/* Quyền Manager: Phê duyệt xuất bản chính thức */}
                     {selectedDoc.status === 'APPROVED' && (
-                      <>
-                        <button
-                          onClick={() => setShowRejectModal(true)}
-                          className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
-                        >
-                          <X className="w-3.5 h-3.5 text-rose-600" />
-                          <span>Từ chối</span>
-                        </button>
-                        <button
-                          onClick={handleManagerPublishAction}
-                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Manager Phê Duyệt & Xuất Bản</span>
-                        </button>
-                      </>
+                      canManagerApprove ? (
+                        <>
+                          <button
+                            onClick={() => setShowRejectModal(true)}
+                            className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
+                          >
+                            <X className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Từ chối</span>
+                          </button>
+                          <button
+                            onClick={handleManagerPublishAction}
+                            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Manager Phê Duyệt & Xuất Bản</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded">
+                            {role === 'Staff'
+                              ? 'Staff đã duyệt xong. Đang chờ Manager phê duyệt & xuất bản'
+                              : 'Cần quyền Manager Approver để phê duyệt và xuất bản'}
+                          </span>
+                          <button
+                            disabled
+                            title="Chỉ Manager Approver hoặc Quản trị viên mới có quyền phê duyệt xuất bản"
+                            className="px-3 py-1.5 rounded bg-slate-100 text-slate-400 font-medium text-xs flex items-center space-x-1.5 cursor-not-allowed border border-slate-200"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Manager Phê Duyệt & Xuất Bản</span>
+                          </button>
+                        </div>
+                      )
                     )}
 
                     {/* Đã xuất bản */}
@@ -317,13 +387,29 @@ export default function WorkflowReviewPage() {
 
                     {/* Bị từ chối: Nút nộp lại */}
                     {selectedDoc.status === 'REJECTED' && (
-                      <button
-                        onClick={handleSubmitDraftAction}
-                        className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Gửi lại kiểm duyệt</span>
-                      </button>
+                      canSubmit ? (
+                        <button
+                          onClick={handleSubmitDraftAction}
+                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Gửi lại kiểm duyệt</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded">
+                            Tài liệu bị từ chối (Chờ Developer chỉnh sửa)
+                          </span>
+                          <button
+                            disabled
+                            title="Chỉ Developer mới có quyền nộp lại tài liệu"
+                            className="px-3 py-1.5 rounded bg-slate-100 text-slate-400 font-medium text-xs flex items-center space-x-1.5 cursor-not-allowed border border-slate-200"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Gửi lại kiểm duyệt</span>
+                          </button>
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
