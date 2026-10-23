@@ -627,11 +627,12 @@ interface LivingDocsContextType {
 const LivingDocsContext = createContext<LivingDocsContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'livingdocs_state_dynamic_v3';
+const SESSION_AUTH_KEY = 'livingdocs_session_auth_v1';
 
 export function LivingDocsProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Trạng thái xác thực & người dùng
+  // Trạng thái xác thực & người dùng: mặc định chưa đăng nhập
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUserState] = useState<AuthUser>(sampleAccounts[1]);
   const [documents, setDocuments] = useState<DocumentItem[]>(defaultMockDocuments);
@@ -646,17 +647,17 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
   const [editingDocument, setEditingDocument] = useState<DocumentItem | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  // Tải dữ liệu từ localStorage lúc khởi động
+  // Tải dữ liệu từ localStorage và kiểm tra phiên xác thực từ sessionStorage
   useEffect(() => {
     try {
+      // 1. Dọn dẹp triệt để trạng thái isAuthenticated cũ trong localStorage
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.isAuthenticated === true && parsed.currentUser) {
-          setIsAuthenticated(true);
-          setCurrentUserState(parsed.currentUser);
-        } else {
-          setIsAuthenticated(false);
+        if (parsed.isAuthenticated !== undefined || parsed.currentUser !== undefined) {
+          delete parsed.isAuthenticated;
+          delete parsed.currentUser;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         }
         if (parsed.documents) setDocuments(parsed.documents);
         if (parsed.changeLogs) setChangeLogs(parsed.changeLogs);
@@ -665,24 +666,34 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
         if (parsed.policy) setPolicy(parsed.policy);
         if (parsed.milestones) setMilestones(parsed.milestones);
         if (parsed.entities) setEntities(parsed.entities);
+      }
+
+      // 2. Chỉ kiểm tra phiên đăng nhập từ sessionStorage (tự động mất khi đóng tab hoặc mở link mới)
+      const sessionAuth = sessionStorage.getItem(SESSION_AUTH_KEY);
+      if (sessionAuth) {
+        const parsedAuth = JSON.parse(sessionAuth);
+        if (parsedAuth.isAuthenticated === true && parsedAuth.currentUser) {
+          setIsAuthenticated(true);
+          setCurrentUserState(parsedAuth.currentUser);
+        } else {
+          setIsAuthenticated(false);
+        }
       } else {
         setIsAuthenticated(false);
       }
     } catch (e) {
-      console.error('Không thể đọc dữ liệu từ localStorage:', e);
+      console.error('Lỗi đọc dữ liệu khởi động:', e);
       setIsAuthenticated(false);
     } finally {
       setIsLoaded(true);
     }
   }, []);
 
-  // Lưu dữ liệu vào localStorage khi có thay đổi
+  // Lưu dữ liệu vào localStorage khi có thay đổi (tuyệt đối không lưu isAuthenticated vào localStorage)
   useEffect(() => {
     if (!isLoaded) return;
     try {
       const stateToSave = {
-        isAuthenticated,
-        currentUser,
         documents,
         changeLogs,
         coverageGaps,
@@ -695,36 +706,48 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
     } catch (e) {
       console.error('Không thể lưu dữ liệu vào localStorage:', e);
     }
-  }, [isAuthenticated, currentUser, documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
+  }, [documents, changeLogs, coverageGaps, impactItems, policy, milestones, entities, isLoaded]);
 
   // Đổi role trực tiếp từ Header -> tự động khớp với tài khoản mẫu tương ứng
   const setRole = (newRole: UserRole) => {
     const matchedAccount = sampleAccounts.find(acc => acc.role === newRole);
-    if (matchedAccount) {
-      setCurrentUserState(matchedAccount);
-    } else {
-      setCurrentUserState(prev => ({
-        ...prev,
-        role: newRole,
-        roleDescription: `Vai trò ${newRole}`
+    const updatedUser: AuthUser = matchedAccount || {
+      ...currentUser,
+      role: newRole,
+      roleDescription: newRole
+    };
+    setCurrentUserState(updatedUser);
+    try {
+      sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify({
+        isAuthenticated: true,
+        currentUser: updatedUser
       }));
+    } catch (e) {
+      console.error(e);
     }
   };
 
   const setCurrentUser = (user: AuthUser) => {
     setCurrentUserState(user);
+    try {
+      sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify({
+        isAuthenticated: true,
+        currentUser: user
+      }));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  // Đăng nhập
+  // Đăng nhập: chỉ lưu vào sessionStorage của phiên làm việc
   const login = (user: AuthUser) => {
     setCurrentUserState(user);
     setIsAuthenticated(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const stateObj = saved ? JSON.parse(saved) : {};
-      stateObj.isAuthenticated = true;
-      stateObj.currentUser = user;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+      sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify({
+        isAuthenticated: true,
+        currentUser: user
+      }));
     } catch (e) {
       console.error(e);
     }
@@ -734,13 +757,7 @@ export function LivingDocsProvider({ children }: { children: React.ReactNode }) 
   const logout = () => {
     setIsAuthenticated(false);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        parsed.isAuthenticated = false;
-        delete parsed.currentUser;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      }
+      sessionStorage.removeItem(SESSION_AUTH_KEY);
     } catch {}
     router.replace('/login');
   };
