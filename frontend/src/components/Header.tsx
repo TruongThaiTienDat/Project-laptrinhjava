@@ -11,7 +11,7 @@ import {
 
 export function Header() {
   const pathname = usePathname();
-  const { currentUser, role, setRole, logout } = useLivingDocs();
+  const { currentUser, role, logout } = useLivingDocs();
 
   // Lấy tên trang hiển thị trên Breadcrumb
   const getPageTitle = (path: string) => {
@@ -33,6 +33,31 @@ export function Header() {
     }
   };
 
+  // Định dạng nhãn vai trò chuẩn tiếng Anh
+  const getRoleLabel = (userRole: UserRole) => {
+    if (userRole === 'Staff') return 'Staff Reviewer';
+    if (userRole === 'Manager') return 'Manager Approver';
+    return userRole;
+  };
+
+  // Màu sắc badge vai trò dịu mắt theo chuẩn thiết kế
+  const getRoleBadgeClasses = (userRole: UserRole) => {
+    switch (userRole) {
+      case 'Developer':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Staff':
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 'Manager':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'Technical Lead':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'Administrator':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
+
   return (
     <>
       <header className="h-14 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
@@ -45,9 +70,8 @@ export function Header() {
           </nav>
         </div>
 
-        {/* Bên phải: Thông tin người dùng kèm dropdown chọn vai trò RBAC và nút Đăng xuất */}
+        {/* Bên phải: Thông tin người dùng & Vai trò cố định theo tài khoản (không có dropdown chuyển đổi) */}
         <div className="flex items-center space-x-4 shrink-0">
-          {/* Khu vực thông tin người dùng & Chọn quyền RBAC gọn gàng */}
           <div className="flex items-center space-x-2.5 text-xs">
             <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0">
               {currentUser?.avatarLetter || 'U'}
@@ -56,28 +80,19 @@ export function Header() {
               <span className="font-semibold text-slate-900 leading-tight">
                 {currentUser?.name || 'Người dùng'}
               </span>
-              <div className="flex items-center space-x-1 mt-0.5">
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 text-[11px] text-slate-700 font-medium outline-none cursor-pointer focus:border-blue-500 transition"
-                  title="Chuyển đổi vai trò kiểm thử (RBAC)"
-                >
-                  <option value="Developer">Developer</option>
-                  <option value="Staff">Staff Reviewer</option>
-                  <option value="Manager">Manager Approver</option>
-                  <option value="Technical Lead">Technical Lead</option>
-                  <option value="Administrator">Administrator</option>
-                </select>
+              <div className="mt-0.5">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium border inline-block ${getRoleBadgeClasses(role)}`}>
+                  {getRoleLabel(role)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Nút Đăng xuất */}
+          {/* Nút Đăng xuất để đổi tài khoản khác */}
           <button
             onClick={logout}
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg transition"
-            title="Đăng xuất khỏi phiên làm việc"
+            title="Đăng xuất khỏi phiên làm việc để đăng nhập tài khoản khác"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Đăng xuất</span>
