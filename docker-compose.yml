@@ -59,5 +59,17 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
 
+  # AI Engine (Python FastAPI) - Backend gọi qua http://ai-engine:8000
+  ai-engine:
+    build: ./ai-engine
+    container_name: livingdocs-ai-engine
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
 volumes:
-  postgres_data~
+  postgres_data:
