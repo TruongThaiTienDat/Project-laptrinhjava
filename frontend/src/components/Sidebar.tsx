@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLivingDocs } from '@/context/LivingDocsContext';
@@ -9,10 +9,7 @@ import {
   BookOpen, 
   BarChart2, 
   Layers, 
-  Workflow,
-  Github,
-  GitBranch,
-  RefreshCw
+  Workflow
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -21,20 +18,6 @@ export function Sidebar() {
 
   // Đếm số lượng tài liệu đang trong hàng đợi chờ duyệt
   const pendingWorkflowCount = documents.filter(d => d.status === 'IN_REVIEW').length;
-
-  // Hiệu ứng đồng bộ repository
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<string | null>(null);
-
-  const handleSyncRepo = () => {
-    setIsSyncing(true);
-    setSyncStatus('Đang đồng bộ...');
-    setTimeout(() => {
-      setIsSyncing(false);
-      setSyncStatus('Đã cập nhật');
-      setTimeout(() => setSyncStatus(null), 2500);
-    }, 600);
-  };
 
   // Nhóm 1: Không gian làm việc
   const workspaceGroup = [
@@ -156,42 +139,6 @@ export function Sidebar() {
           })}
         </div>
       </nav>
-
-      {/* Khung thông tin kho lưu trữ GitHub đang kết nối */}
-      <div className="bg-slate-800/60 border border-slate-700/60 rounded-lg p-3 mx-3 mb-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            KHO LƯU TRỮ GITHUB
-          </span>
-          <span className="flex items-center space-x-1 text-[10px] text-emerald-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulseSubtle" />
-            <span>Đã kết nối</span>
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-1.5 mt-2">
-          <Github className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-          <span className="text-xs font-semibold text-white truncate" title="Project-laptrinhjava">
-            Project-laptrinhjava
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/60 text-[11px] text-slate-400">
-          <div className="flex items-center space-x-1 truncate">
-            <GitBranch className="w-3 h-3 text-slate-400 shrink-0" />
-            <span className="truncate">Nhánh: <strong className="text-slate-300 font-mono">main</strong></span>
-          </div>
-          <button
-            onClick={handleSyncRepo}
-            disabled={isSyncing}
-            className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded hover:bg-slate-700/60 text-slate-300 hover:text-white transition cursor-pointer shrink-0"
-            title="Đồng bộ lại nhánh từ GitHub"
-          >
-            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-blue-400' : ''}`} />
-            <span>{syncStatus || 'Đồng bộ lại'}</span>
-          </button>
-        </div>
-      </div>
 
       {/* Thông tin chân trang */}
       <div className="p-4 border-t border-slate-800 text-xs">

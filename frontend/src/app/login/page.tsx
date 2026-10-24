@@ -17,35 +17,30 @@ import {
   Loader2 
 } from 'lucide-react';
 
-// Danh sách quyền hạn thực tế của từng vai trò theo đề cương đồ án
-const roleDutiesMap: Record<UserRole, { label: string; duty: string; avatarColor: string; badgeColor: string }> = {
+// Danh sách định dạng màu sắc cho từng vai trò theo đề cương đồ án
+const roleDutiesMap: Record<UserRole, { label: string; avatarColor: string; badgeColor: string }> = {
   Developer: {
     label: 'Developer',
-    duty: 'Khởi tạo tài liệu & gửi duyệt PR',
     avatarColor: 'bg-blue-100 text-blue-700 border-blue-200',
     badgeColor: 'bg-blue-50 text-blue-700 border-blue-200'
   },
   Staff: {
     label: 'Staff Reviewer',
-    duty: 'Kiểm tra kỹ thuật & duyệt bước 1',
     avatarColor: 'bg-indigo-100 text-indigo-700 border-indigo-200',
     badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200'
   },
   Manager: {
     label: 'Manager Approver',
-    duty: 'Phê duyệt cuối cùng & xuất bản',
     avatarColor: 'bg-amber-100 text-amber-700 border-amber-200',
     badgeColor: 'bg-amber-50 text-amber-700 border-amber-200'
   },
   'Technical Lead': {
     label: 'Technical Lead',
-    duty: 'Quản trị cấu hình CI/CD & phân tích tác động',
     avatarColor: 'bg-purple-100 text-purple-700 border-purple-200',
     badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
   },
   Administrator: {
     label: 'Administrator',
-    duty: 'Toàn quyền quản trị hệ thống LivingDocs',
     avatarColor: 'bg-emerald-100 text-emerald-700 border-emerald-200',
     badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
   }
@@ -156,15 +151,6 @@ export default function LoginPage() {
         {/* CỘT TRÁI (7/12): Form xác thực hệ thống */}
         <div className="lg:col-span-7 p-6 sm:p-9 flex flex-col justify-between space-y-6">
           <div className="space-y-5">
-            {/* Thanh trạng thái hệ thống sẵn sàng */}
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] text-slate-600 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulseSubtle" />
-                <span>Hệ thống sẵn sàng • OAuth2 & RBAC Enabled</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">LivingDocs v2.0</span>
-            </div>
-
             {/* Header thương hiệu */}
             <div className="space-y-1 pb-3 border-b border-slate-100">
               <div className="inline-flex items-center space-x-2 text-blue-600 mb-1">
@@ -377,10 +363,6 @@ export default function LoginPage() {
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
                           {account.email}
-                        </div>
-                        {/* Dòng mô tả nhiệm vụ thực tế */}
-                        <div className="text-[10px] text-slate-400 mt-0.5 italic truncate">
-                          {roleMeta?.duty || ''}
                         </div>
                       </div>
                     </div>
