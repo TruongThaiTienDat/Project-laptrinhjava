@@ -117,16 +117,16 @@ export default function WorkflowReviewPage() {
       {/* Tiêu đề trang & Nút tải tài liệu lên */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Xét duyệt tài liệu (Workflow)</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Xét duyệt tài liệu (Workflow)</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Quy trình kiểm duyệt tài liệu 2 cấp: Developer nộp tài liệu ➔ Staff kiểm tra kỹ thuật ➔ Manager phê duyệt xuất bản.
           </p>
         </div>
 
-        {/* Nút bấm tải tài liệu lên nổi bật màu blue-600 */}
+        {/* Nút bấm tải tài liệu lên */}
         <button
           onClick={() => setIsTestModalOpen(true)}
-          className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm"
+          className="btn-press flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow-sm cursor-pointer"
         >
           <Upload className="w-4 h-4" />
           <span>Tải tài liệu lên / Tạo bản kiểm tra</span>
@@ -135,8 +135,8 @@ export default function WorkflowReviewPage() {
 
       {/* Thông báo thao tác */}
       {notification && (
-        <div className={`p-3 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all ${
-          notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+        <div className={`p-3 rounded-lg text-xs font-medium flex items-center space-x-2 animate-scaleIn border ${
+          notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
         }`}>
           {notification.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
           <span>{notification.message}</span>
@@ -144,13 +144,13 @@ export default function WorkflowReviewPage() {
       )}
 
       {/* Thanh tab hàng đợi và thanh tìm kiếm */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/90 text-xs shadow-2xs">
         <div className="flex items-center space-x-1.5">
           <button
             onClick={() => setActiveTab('STAFF_QUEUE')}
-            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
+            className={`btn-press px-3 py-1.5 rounded-md font-medium flex items-center space-x-1.5 cursor-pointer transition ${
               activeTab === 'STAFF_QUEUE'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white font-semibold shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -160,9 +160,9 @@ export default function WorkflowReviewPage() {
 
           <button
             onClick={() => setActiveTab('MANAGER_QUEUE')}
-            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
+            className={`btn-press px-3 py-1.5 rounded-md font-medium flex items-center space-x-1.5 cursor-pointer transition ${
               activeTab === 'MANAGER_QUEUE'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white font-semibold shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -172,9 +172,9 @@ export default function WorkflowReviewPage() {
 
           <button
             onClick={() => setActiveTab('ALL')}
-            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
+            className={`btn-press px-3 py-1.5 rounded-md font-medium flex items-center space-x-1.5 cursor-pointer transition ${
               activeTab === 'ALL'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white font-semibold shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -186,22 +186,22 @@ export default function WorkflowReviewPage() {
         {/* Tìm kiếm & Lọc độ lệch */}
         <div className="flex items-center space-x-2">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Tìm tên tài liệu..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-slate-300 rounded text-xs outline-none focus:border-blue-500 w-44"
+              className="pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 w-44 bg-slate-50/50 transition"
             />
           </div>
 
-          <div className="flex items-center space-x-1 bg-white border border-slate-300 rounded px-2 py-1">
+          <div className="flex items-center space-x-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
-              className="bg-transparent border-none text-xs text-slate-700 outline-none"
+              className="bg-transparent border-none text-xs text-slate-700 outline-none cursor-pointer"
             >
               <option value="ALL">Tất cả mức độ</option>
               <option value="Critical">Critical</option>
@@ -216,13 +216,13 @@ export default function WorkflowReviewPage() {
       {/* Bố cục 2 cột cân đối: 1/3 Hàng đợi - 2/3 Chi tiết xét duyệt */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Cột trái (1/3): Danh sách tài liệu */}
-        <div className="lg:col-span-4 bg-white rounded-lg border border-slate-200 p-4">
+        <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-xs font-bold text-slate-800">
               Danh sách hàng đợi ({filteredDocuments.length})
             </span>
             <span className="text-[11px] text-slate-400 font-mono">
-              Quyền hiện tại: <span className="font-semibold text-blue-600">{role}</span>
+              Quyền: <span className="font-semibold text-blue-600">{role}</span>
             </span>
           </div>
 
@@ -240,13 +240,13 @@ export default function WorkflowReviewPage() {
                     onClick={() => setSelectedDocId(doc.id)}
                     className={`p-3 rounded-lg border cursor-pointer transition text-xs ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50/40 ring-1 ring-blue-500'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500/20 shadow-2xs'
+                        : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h4 className="font-medium text-slate-900 line-clamp-1">{doc.title.split(' - ')[0]}</h4>
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">
+                      <h4 className="font-semibold text-slate-900 line-clamp-1">{doc.title.split(' - ')[0]}</h4>
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0 tabular-nums">
                         v{doc.version}
                       </span>
                     </div>
@@ -272,11 +272,11 @@ export default function WorkflowReviewPage() {
           {selectedDoc ? (
             <>
               {/* Thẻ thông tin và nút hành động */}
-              <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="bg-white rounded-xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-slate-100">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-semibold text-slate-900">{selectedDoc.title}</h2>
+                      <h2 className="text-base font-bold text-slate-900">{selectedDoc.title}</h2>
                       <StatusBadge status={selectedDoc.status} />
                       <SeverityBadge severity={selectedDoc.driftSeverity} />
                     </div>
@@ -294,7 +294,7 @@ export default function WorkflowReviewPage() {
                       canSubmit ? (
                         <button
                           onClick={handleSubmitDraftAction}
-                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                          className="btn-press px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Nộp kiểm duyệt (Submit)</span>
@@ -322,14 +322,14 @@ export default function WorkflowReviewPage() {
                         <>
                           <button
                             onClick={() => setShowRejectModal(true)}
-                            className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
+                            className="btn-press px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5 text-rose-600" />
                             <span>Từ chối</span>
                           </button>
                           <button
                             onClick={handleStaffApproveAction}
-                            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                            className="btn-press px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Staff Duyệt (Bước 1)</span>
@@ -360,14 +360,14 @@ export default function WorkflowReviewPage() {
                         <>
                           <button
                             onClick={() => setShowRejectModal(true)}
-                            className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition"
+                            className="btn-press px-3 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1.5 transition cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5 text-rose-600" />
                             <span>Từ chối</span>
                           </button>
                           <button
                             onClick={handleManagerPublishAction}
-                            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                            className="btn-press px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Manager Phê Duyệt & Xuất Bản</span>
@@ -405,7 +405,7 @@ export default function WorkflowReviewPage() {
                       canSubmit ? (
                         <button
                           onClick={handleSubmitDraftAction}
-                          className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition"
+                          className="btn-press px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Gửi lại kiểm duyệt</span>
@@ -435,7 +435,7 @@ export default function WorkflowReviewPage() {
                           showNotify(`Đã xóa tài liệu "${selectedDoc.title.split(' - ')[0]}".`);
                         }
                       }}
-                      className="px-2.5 py-1.5 rounded border border-slate-300 text-slate-600 hover:text-rose-600 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1 transition"
+                      className="btn-press px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:text-rose-600 hover:bg-rose-50 font-medium text-xs flex items-center space-x-1 transition cursor-pointer"
                       title="Xóa tài liệu kiểm thử này khỏi hệ thống"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -446,17 +446,20 @@ export default function WorkflowReviewPage() {
 
                 {/* Nhật ký kiểm duyệt gần nhất của tài liệu này */}
                 {relevantLogs.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 text-xs">
+                  <div className="pt-2 text-xs">
                     <div className="flex items-center space-x-1 text-slate-500 font-medium mb-1.5">
                       <History className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Lịch sử chuyển trạng thái gần nhất:</span>
+                      <span>Nhật ký chuyển trạng thái (Audit Trail):</span>
                     </div>
-                    <div className="space-y-1">
-                      {relevantLogs.slice(0, 2).map((log) => (
-                        <div key={log.id} className="text-slate-600 text-[11px] flex items-center space-x-2">
-                          <span className="font-semibold text-slate-800">[{log.role}]</span>
-                          <span>{log.fromStatus} ➔ {log.toStatus}:</span>
-                          <span className="italic text-slate-500">{log.note}</span>
+                    <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono text-[11px]">
+                      {relevantLogs.slice(-3).map((log) => (
+                        <div key={log.id} className="flex items-center justify-between text-slate-600">
+                          <span className="truncate">
+                            <strong className="text-slate-800">[{log.role}]</strong>: {log.fromStatus} ➔ <strong className="text-blue-600">{log.toStatus}</strong> ({log.note})
+                          </span>
+                          <span className="text-slate-400 text-[10px] shrink-0 ml-2 tabular-nums">
+                            {new Date(log.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -478,7 +481,7 @@ export default function WorkflowReviewPage() {
               />
             </>
           ) : (
-            <div className="bg-white rounded-lg border border-slate-200 p-12 text-center text-slate-400 text-xs">
+            <div className="bg-white rounded-xl border border-slate-200/90 p-12 text-center text-slate-400 text-xs">
               Vui lòng chọn một tài liệu từ danh sách bên trái để xem chi tiết xét duyệt.
             </div>
           )}
@@ -487,10 +490,10 @@ export default function WorkflowReviewPage() {
 
       {/* Modal Từ Chối Tài Liệu */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg border border-slate-200 shadow-xl max-w-md w-full p-5 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-2xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 animate-scaleIn">
             <div>
-              <h3 className="font-semibold text-sm text-slate-900">Từ chối xét duyệt tài liệu</h3>
+              <h3 className="font-bold text-sm text-slate-900">Từ chối xét duyệt tài liệu</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Nhập lý do từ chối để thông báo cho tác giả và chuyển tài liệu về trạng thái REJECTED.
               </p>
@@ -501,19 +504,19 @@ export default function WorkflowReviewPage() {
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Ví dụ: Tài liệu thiếu tham số headers xác thực, yêu cầu bổ sung..."
-              className="w-full p-2.5 border border-slate-300 rounded text-xs outline-none focus:border-blue-500"
+              className="w-full p-2.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
             />
 
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-3.5 py-1.5 rounded text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+                className="btn-press px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handleRejectConfirm}
-                className="px-4 py-1.5 rounded text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white transition"
+                className="btn-press px-4 py-1.5 rounded-lg text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm cursor-pointer"
               >
                 Xác nhận từ chối
               </button>

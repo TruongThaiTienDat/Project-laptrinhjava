@@ -314,8 +314,8 @@ Phát hiện sai lệch dạng **${driftType}** với mức độ nghiêm trọn
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg border border-slate-200 shadow-xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-2xs flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scaleIn">
         {/* Header Modal */}
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div>
@@ -790,7 +790,7 @@ Phát hiện sai lệch dạng **${driftType}** với mức độ nghiêm trọn
               <button
                 type="button"
                 onClick={handleSaveDocument}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded flex items-center space-x-1.5 transition shadow-sm"
+                className="btn-press px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center space-x-1.5 transition shadow-sm cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Lưu & Đưa vào hệ thống</span>

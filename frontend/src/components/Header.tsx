@@ -60,9 +60,9 @@ export function Header() {
 
   return (
     <>
-      <header className="h-14 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-        {/* Bên trái: Breadcrumb điều hướng tinh gọn (LivingDocs / Tên trang) */}
-        <div className="flex items-center space-x-2">
+      <header className="h-14 bg-white/95 backdrop-blur-sm border-b border-slate-200/90 px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        {/* Bên trái: Breadcrumb điều hướng */}
+        <div className="flex items-center space-x-3">
           <nav className="flex items-center space-x-2 text-xs font-medium">
             <span className="text-slate-500 font-semibold">LivingDocs</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -70,10 +70,10 @@ export function Header() {
           </nav>
         </div>
 
-        {/* Bên phải: Thông tin người dùng & Vai trò cố định theo tài khoản (không có dropdown chuyển đổi) */}
+        {/* Bên phải: Thông tin người dùng & Vai trò cố định theo tài khoản */}
         <div className="flex items-center space-x-4 shrink-0">
           <div className="flex items-center space-x-2.5 text-xs">
-            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
               {currentUser?.avatarLetter || 'U'}
             </div>
             <div className="flex flex-col text-left">
@@ -81,7 +81,7 @@ export function Header() {
                 {currentUser?.name || 'Người dùng'}
               </span>
               <div className="mt-0.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium border inline-block ${getRoleBadgeClasses(role)}`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium border inline-block ${getRoleBadgeClasses(role)}`}>
                   {getRoleLabel(role)}
                 </span>
               </div>
@@ -91,16 +91,16 @@ export function Header() {
           {/* Nút Đăng xuất để đổi tài khoản khác */}
           <button
             onClick={logout}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg transition"
+            className="btn-press flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg transition cursor-pointer"
             title="Đăng xuất khỏi phiên làm việc để đăng nhập tài khoản khác"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Đăng xuất</span>
+            <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         </div>
       </header>
 
-      {/* Modal quản lý dữ liệu test & tải file ngoài */}
+      {/* Modal Tải tài liệu kiểm thử */}
       <TestDataModal />
     </>
   );

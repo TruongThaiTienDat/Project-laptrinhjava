@@ -72,7 +72,7 @@ export default function LoginPage() {
 
     // Kích hoạt hiệu ứng nhấp nháy viền xanh nhẹ ở cột trái
     setIsAutoFilledFlash(true);
-    setTimeout(() => setIsAutoFilledFlash(false), 700);
+    setTimeout(() => setIsAutoFilledFlash(false), 600);
   };
 
   // Xử lý đăng nhập thông thường
@@ -112,7 +112,7 @@ export default function LoginPage() {
     setTimeout(() => {
       login(userToLogin);
       router.replace('/');
-    }, 500);
+    }, 450);
   };
 
   // Đăng nhập với GitHub OAuth
@@ -132,7 +132,7 @@ export default function LoginPage() {
     setTimeout(() => {
       login(oauthUser);
       router.replace('/');
-    }, 500);
+    }, 450);
   };
 
   return (
@@ -146,7 +146,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
 
       {/* Khung Card chính đăng nhập Enterprise */}
-      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-fadeIn transition-all duration-300">
+      <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-fadeIn transition-all duration-300">
         
         {/* CỘT TRÁI (7/12): Form xác thực hệ thống */}
         <div className="lg:col-span-7 p-6 sm:p-9 flex flex-col justify-between space-y-6">
@@ -172,7 +172,7 @@ export default function LoginPage() {
 
             {/* Thông báo lỗi nếu có */}
             {errorMsg && (
-              <div className="p-3 text-xs rounded-lg bg-rose-50 border border-rose-200 text-rose-700 animate-fadeIn">
+              <div className="p-3 text-xs rounded-lg bg-rose-50 border border-rose-200 text-rose-700 animate-scaleIn">
                 {errorMsg}
               </div>
             )}
@@ -191,10 +191,10 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@livingdocs.vn"
-                    className={`w-full pl-9 pr-3 py-2 text-xs border rounded-lg text-slate-900 bg-white focus:outline-none transition-all duration-300 ${
+                    className={`w-full pl-9 pr-3 py-2 text-xs border rounded-lg text-slate-900 bg-white focus:outline-none transition-all duration-200 ${
                       isAutoFilledFlash
-                        ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/20'
-                        : 'border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                        ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/25'
+                        : 'border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
                     }`}
                   />
                 </div>
@@ -212,12 +212,12 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Nhập mật khẩu"
-                    className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
+                    className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(prev => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                    className="btn-press absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                     title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -241,10 +241,10 @@ export default function LoginPage() {
                       setEmail(matched.email);
                     }
                   }}
-                  className={`w-full px-3 py-2 text-xs border rounded-lg text-slate-900 bg-white focus:outline-none transition-all duration-300 font-medium cursor-pointer ${
+                  className={`w-full px-3 py-2 text-xs border rounded-lg text-slate-900 bg-white focus:outline-none transition-all duration-200 font-medium cursor-pointer ${
                     isAutoFilledFlash
-                      ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/20'
-                      : 'border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                      ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/25'
+                      : 'border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
                   }`}
                 >
                   <option value="Developer">Developer</option>
@@ -257,7 +257,7 @@ export default function LoginPage() {
 
               {/* Hàng tùy chọn: Ghi nhớ phiên & Trạng thái bảo mật TLS 1.3 */}
               <div className="flex items-center justify-between text-xs pt-0.5">
-                <label className="flex items-center space-x-2 cursor-pointer text-slate-600">
+                <label className="flex items-center space-x-2 cursor-pointer text-slate-600 select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
@@ -272,11 +272,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Nút Đăng nhập chính với dải màu chiều sâu và hiệu ứng nổi */}
+              {/* Nút Đăng nhập chính với hiệu ứng bấm vật lý xúc giác */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-xs rounded-xl shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-75 cursor-pointer"
+                className="btn-press w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-xs rounded-xl shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-75 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -305,7 +305,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGithubOAuthLogin}
               disabled={isLoading}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 font-medium text-xs rounded-xl transition shadow-2xs cursor-pointer disabled:opacity-75"
+              className="btn-press w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 font-medium text-xs rounded-xl transition shadow-2xs cursor-pointer disabled:opacity-75"
             >
               <Github className="w-4 h-4 text-slate-900" />
               <span>Đăng nhập với GitHub OAuth</span>
@@ -339,10 +339,10 @@ export default function LoginPage() {
                   <div
                     key={account.id}
                     onClick={() => handleSelectAccount(account)}
-                    style={{ animationDelay: `${index * 60}ms` }}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all duration-200 text-xs flex items-center justify-between gap-2.5 animate-fadeIn ${
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    className={`btn-press p-3 rounded-xl border cursor-pointer transition-all duration-200 text-xs flex items-center justify-between gap-2.5 animate-fadeIn ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50/40 shadow-sm ring-1 ring-blue-500/20 scale-[1.01] border-l-4 border-l-blue-600'
+                        ? 'border-blue-500 bg-blue-50/50 shadow-sm ring-1 ring-blue-500/20 border-l-4 border-l-blue-600'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-white bg-white/80 shadow-2xs'
                     }`}
                   >

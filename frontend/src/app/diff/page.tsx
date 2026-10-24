@@ -35,16 +35,16 @@ export default function DiffViewPage() {
       {/* Tiêu đề trang & Nút tải tài liệu lên */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">So sánh thay đổi (Diff View)</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">So sánh thay đổi (Diff View)</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Trực quan hóa sự khác biệt giữa tài liệu hiện hành và bản cập nhật đề xuất, đính kèm bằng chứng Grounding Evidence từ mã nguồn.
           </p>
         </div>
 
-        {/* Nút bấm tải tài liệu lên nổi bật màu blue-600 */}
+        {/* Nút bấm tải tài liệu lên */}
         <button
           onClick={() => setIsTestModalOpen(true)}
-          className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition shadow-sm"
+          className="btn-press flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow-sm cursor-pointer"
         >
           <Upload className="w-4 h-4" />
           <span>Tải tài liệu lên / Tạo bản kiểm tra</span>
@@ -53,18 +53,18 @@ export default function DiffViewPage() {
 
       {/* Thông báo thao tác */}
       {notification && (
-        <div className="p-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-2">
+        <div className="p-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-2 animate-scaleIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{notification}</span>
         </div>
       )}
 
-      {/* Thanh công cụ ngang gọn gàng: Dropdown chọn tài liệu + Nút chuyển chế độ + Nút Tự nhập dữ liệu test */}
-      <div className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Thanh công cụ ngang gọn gàng */}
+      <div className="bg-white p-3 rounded-xl border border-slate-200/90 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
         <div className="flex flex-wrap items-center gap-3">
           {/* Dropdown chọn tài liệu */}
           <div className="flex items-center space-x-2">
-            <span className="font-medium text-slate-600">Chọn tài liệu:</span>
+            <span className="font-semibold text-slate-700">Chọn tài liệu:</span>
             <select
               value={customMode ? 'CUSTOM' : selectedDocId}
               onChange={(e) => {
@@ -75,7 +75,7 @@ export default function DiffViewPage() {
                   setSelectedDocId(Number(e.target.value));
                 }
               }}
-              className="bg-white border border-slate-300 rounded px-2.5 py-1.5 font-medium text-slate-800 outline-none focus:border-blue-500"
+              className="bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 outline-none focus:border-blue-500 cursor-pointer"
             >
               {documents.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -102,8 +102,8 @@ export default function DiffViewPage() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setCustomMode(!customMode)}
-            className={`px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 transition ${
-              customMode ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+            className={`btn-press px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 cursor-pointer transition ${
+              customMode ? 'bg-blue-600 text-white font-semibold shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export default function DiffViewPage() {
 
           <button
             onClick={() => setIsTestModalOpen(true)}
-            className="px-3 py-1.5 rounded font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 transition"
+            className="btn-press px-3 py-1.5 rounded-lg font-medium text-blue-600 hover:bg-blue-50 border border-blue-200 cursor-pointer transition"
           >
             + Quản lý toàn bộ tài liệu test
           </button>
@@ -125,7 +125,7 @@ export default function DiffViewPage() {
                   showNotify(`Đã xóa tài liệu "${currentDoc.title.split(' - ')[0]}".`);
                 }
               }}
-              className="px-2.5 py-1.5 rounded font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition flex items-center space-x-1"
+              className="btn-press px-2.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 cursor-pointer transition flex items-center space-x-1"
               title="Xóa tài liệu kiểm thử này khỏi hệ thống"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -137,9 +137,9 @@ export default function DiffViewPage() {
 
       {/* Khu vực nhập trực tiếp khi ở chế độ Custom Mode */}
       {customMode && (
-        <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3 text-xs">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/90 space-y-3 text-xs shadow-2xs animate-fadeIn">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-900">
+            <h3 className="font-bold text-slate-900">
               Khu vực nhập / sửa dữ liệu kiểm thử Diff View trực tiếp:
             </h3>
             <button
@@ -149,7 +149,7 @@ export default function DiffViewPage() {
                 setCustomNewContent('# Nội dung mới đã được cập nhật');
                 setCustomDiffSnippet('+ public void newMethod()');
               }}
-              className="text-slate-500 hover:text-slate-800 flex items-center space-x-1 text-[11px]"
+              className="btn-press text-slate-500 hover:text-slate-800 flex items-center space-x-1 text-[11px] cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Xóa trắng / Mẫu nhanh</span>
@@ -163,7 +163,7 @@ export default function DiffViewPage() {
                 type="text"
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-500"
+                className="w-full p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
               />
             </div>
             <div>
@@ -172,7 +172,7 @@ export default function DiffViewPage() {
                 type="text"
                 value={customSourceFile}
                 onChange={(e) => setCustomSourceFile(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+                className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
               />
             </div>
             <div>
@@ -181,7 +181,7 @@ export default function DiffViewPage() {
                 type="text"
                 value={customCodeEntity}
                 onChange={(e) => setCustomCodeEntity(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded text-xs font-mono outline-none focus:border-blue-500"
+                className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
               />
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function DiffViewPage() {
               rows={2}
               value={customDiffSnippet}
               onChange={(e) => setCustomDiffSnippet(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+              className="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
             />
           </div>
 
@@ -203,7 +203,7 @@ export default function DiffViewPage() {
                 rows={5}
                 value={customOldContent}
                 onChange={(e) => setCustomOldContent(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+                className="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
               />
             </div>
             <div>
@@ -212,7 +212,7 @@ export default function DiffViewPage() {
                 rows={5}
                 value={customNewContent}
                 onChange={(e) => setCustomNewContent(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded font-mono text-xs outline-none focus:border-blue-500"
+                className="w-full p-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 transition"
               />
             </div>
           </div>
