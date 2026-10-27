@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 import ast
 import re
 
+from app.parser.java_parser import parse_java  # KAN-21: Java AST parser
+
 app = FastAPI(
     title="LivingDocs AI Engine API",
     version="1.0.0",
@@ -63,6 +65,19 @@ def extract_entities(source_code: str, language: str) -> list[str]:
                     entities.append(f"Class: {node.name}")
 
         except SyntaxError:
+            entities.append("Source code syntax could not be parsed")
+    elif (language or "").lower() == "java":  # KAN-21: parse Java bang tree-sitter
+        try:
+            for e in parse_java(source_code):
+                label = e.kind.capitalize()
+                if e.kind in ("method", "constructor"):
+                    if e.parent:
+                        entities.append(f"{label}: {e.parent}.{e.signature}")
+                    else:
+                        entities.append(f"{label}: {e.signature}")
+                else:
+                    entities.append(f"{label}: {e.name}")
+        except Exception:
             entities.append("Source code syntax could not be parsed")
     else:
         pattern = (
