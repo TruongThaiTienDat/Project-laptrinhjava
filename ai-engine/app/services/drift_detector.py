@@ -2,8 +2,9 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from app.services.doc_chunker import chunk_markdown, find_relevant_chunks
+from app.services.doc_chunker import chunk_markdown
 from app.services.llm_client import ask_llm
+from app.services.retriever import retrieve_chunks
 
 MAX_DOC_CHARS = 12000
 MAX_DIFF_CHARS = 8000
@@ -51,13 +52,9 @@ def changed_names(code_diff: str, limit: int = 10) -> list[str]:
 
 
 def select_headings(current_content: str, names: list[str]) -> list[str]:
-    """Tim cac muc tai lieu lien quan den cac ten bi doi (buoc retrieve)."""
+    """Tim cac muc tai lieu lien quan den cac ten bi doi (embedding + tu khoa)."""
     chunks = chunk_markdown(current_content)
-    picked = {}
-    for name in names:
-        for chunk, _score in find_relevant_chunks(chunks, name, top_k=2):
-            picked[chunk.start_line] = chunk.heading
-    return [picked[k] for k in sorted(picked)]
+    return [chunk.heading for chunk in retrieve_chunks(chunks, names)]
 
 
 def build_prompt(
