@@ -6,7 +6,13 @@ import ast
 import re
 
 from app.parser.java_parser import parse_java  # KAN-21: Java AST parser
-from app.services.drift_detector import detect_drift  # KAN-22: RAG drift detection
+from app.services.confidence import (  # KAN-23: diem tin cay va bang chung doi chieu
+    compute_confidence,
+    evidence_entities,
+    extract_evidence,
+    format_evidence,
+)
+from app.services.drift_detector import changed_names, detect_drift  # KAN-22: RAG drift detection
 
 app = FastAPI(
     title="LivingDocs AI Engine API",
@@ -119,6 +125,9 @@ def build_drift_response(request: UpdateRequest, drift) -> AiEngineResult:
     else:
         content = request.current_content.rstrip()
 
+    names = changed_names(request.code_diff)  # KAN-23: ham/class bi doi trong code
+    score = compute_confidence(request.current_content, drift, names)  # KAN-23
+
     report = "\n\n## Drift Report\n"
     if drift.findings:
         report += "\n".join(
@@ -126,15 +135,23 @@ def build_drift_response(request: UpdateRequest, drift) -> AiEngineResult:
         )
     else:
         report += "- No documentation drift detected."
-    report += f"\n\n- Commit: {request.commit_hash or 'Not provided'}\n"
+    report += (
+        f"\n\n- Confidence score: {score}"  # KAN-23
+        f"\n- Commit: {request.commit_hash or 'Not provided'}\n"
+    )
+    report += format_evidence(  # KAN-23: trich dan doan tai lieu va dong code lam bang chung
+        extract_evidence(
+            request.current_content, request.code_diff, drift.findings, names
+        )
+    )
 
     evidence = [
         GroundingEvidence(
             file_path=request.file_path,
-            code_entity=f.section or "Code changes",
+            code_entity=entity,  # KAN-23: ten ham/class bi doi trong code
             commit_hash=request.commit_hash
         )
-        for f in drift.findings
+        for entity in evidence_entities(drift.findings, names)
     ]
     if not evidence:
         evidence = [
@@ -147,7 +164,7 @@ def build_drift_response(request: UpdateRequest, drift) -> AiEngineResult:
 
     return AiEngineResult(
         content=content + report,
-        confidence_score=0.80,  # tam thoi, KAN-23 se tinh diem that
+        confidence_score=score,  # KAN-23: diem tinh that thay cho 0.80 co dinh
         grounding_evidence=evidence[:50],
         model=LLM_MODEL_NAME
     )
