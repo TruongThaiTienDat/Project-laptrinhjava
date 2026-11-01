@@ -5,3 +5,4 @@ python-dotenv>=1.0.0
 
 tree-sitter>=0.23.0
 tree-sitter-java>=0.23.0
+google-genai>=1.0.0
